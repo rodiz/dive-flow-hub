@@ -8,20 +8,16 @@ import oceanPattern from "@/assets/ocean-pattern.jpg";
 import PaymentButton from "@/components/PaymentButton";
 import SubscriptionStatus from "@/components/SubscriptionStatus";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [plans, setPlans] = useState([]);
-  const [userEmail, setUserEmail] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlans();
-    
-    // Check if user is logged in
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.email) {
-        setUserEmail(data.user.email);
-      }
-    });
   }, []);
 
   const fetchPlans = async () => {
@@ -242,7 +238,7 @@ const Index = () => {
       </section>
 
       {/* Subscription Status */}
-      {userEmail && (
+      {user?.email && (
         <section className="py-12 bg-muted/50">
           <div className="container">
             <div className="text-center mb-8">
@@ -251,7 +247,7 @@ const Index = () => {
               </h2>
             </div>
             <div className="max-w-2xl mx-auto">
-              <SubscriptionStatus userEmail={userEmail} />
+              <SubscriptionStatus userEmail={user.email} />
             </div>
           </div>
         </section>
@@ -282,7 +278,7 @@ const Index = () => {
             ))}
           </div>
 
-          {!userEmail && (
+          {!user && (
             <div className="text-center mt-12">
               <Card className="max-w-md mx-auto">
                 <CardContent className="p-6">

@@ -1,12 +1,24 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Waves, BookOpen, Users, MapPin, User, LogIn } from "lucide-react";
+import { Menu, Waves, BookOpen, Users, MapPin, User, LogIn, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
 
   const navItems = [
     { href: "/", label: "Inicio", icon: Waves },
@@ -17,6 +29,17 @@ const Navigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+    setIsOpen(false);
+  };
+
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    return user.email.charAt(0).toUpperCase();
+  };
 
   const NavLinks = ({ mobile = false }) => (
     <>
@@ -63,15 +86,72 @@ const Navigation = () => {
           <NavLinks />
         </div>
 
-        {/* Auth Buttons */}
+        {/* Auth Section */}
         <div className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <LogIn className="w-4 h-4 mr-2" />
-            Iniciar Sesión
-          </Button>
-          <Button variant="default" size="sm" className="bg-gradient-ocean">
-            Registrarse
-          </Button>
+          {loading ? (
+            <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-gradient-ocean text-primary-foreground">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.email}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      Usuario autenticado
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/perfil" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate("/auth")}
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Iniciar Sesión
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="bg-gradient-ocean"
+                onClick={() => navigate("/auth")}
+              >
+                Registrarse
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu */}
@@ -95,13 +175,49 @@ const Navigation = () => {
               </div>
 
               <div className="flex flex-col gap-2 pt-4 border-t">
-                <Button variant="ghost" className="justify-start">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Iniciar Sesión
-                </Button>
-                <Button variant="default" className="bg-gradient-ocean justify-start">
-                  Registrarse
-                </Button>
+                {loading ? (
+                  <div className="w-full h-10 bg-muted rounded animate-pulse" />
+                ) : user ? (
+                  <>
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-gradient-ocean text-primary-foreground">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{user.email}</span>
+                        <span className="text-xs text-muted-foreground">Usuario</span>
+                      </div>
+                    </div>
+                    <Button variant="ghost" className="justify-start" onClick={() => { navigate("/perfil"); setIsOpen(false); }}>
+                      <User className="w-4 h-4 mr-2" />
+                      Perfil
+                    </Button>
+                    <Button variant="ghost" className="justify-start" onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Cerrar Sesión
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      className="justify-start"
+                      onClick={() => { navigate("/auth"); setIsOpen(false); }}
+                    >
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Iniciar Sesión
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      className="bg-gradient-ocean justify-start"
+                      onClick={() => { navigate("/auth"); setIsOpen(false); }}
+                    >
+                      Registrarse
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </SheetContent>
