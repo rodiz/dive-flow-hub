@@ -14,6 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_enrollments: {
+        Row: {
+          certification_issued: boolean | null
+          certification_number: string | null
+          completion_date: string | null
+          course_id: string
+          created_at: string
+          diving_center_id: string | null
+          enrollment_status: string
+          final_score: number | null
+          id: string
+          instructor_id: string
+          start_date: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          certification_issued?: boolean | null
+          certification_number?: string | null
+          completion_date?: string | null
+          course_id: string
+          created_at?: string
+          diving_center_id?: string | null
+          enrollment_status?: string
+          final_score?: number | null
+          id?: string
+          instructor_id: string
+          start_date: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          certification_issued?: boolean | null
+          certification_number?: string | null
+          completion_date?: string | null
+          course_id?: string
+          created_at?: string
+          diving_center_id?: string | null
+          enrollment_status?: string
+          final_score?: number | null
+          id?: string
+          instructor_id?: string
+          start_date?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_enrollments_diving_center_id_fkey"
+            columns: ["diving_center_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_enrollments_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          active: boolean
+          certification_agency: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          max_depth_limit: number | null
+          min_dives_required: number | null
+          name: string
+          practical_hours: number | null
+          prerequisites: string[] | null
+          price_cop: number | null
+          theory_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          certification_agency: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_depth_limit?: number | null
+          min_dives_required?: number | null
+          name: string
+          practical_hours?: number | null
+          prerequisites?: string[] | null
+          price_cop?: number | null
+          theory_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          certification_agency?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_depth_limit?: number | null
+          min_dives_required?: number | null
+          name?: string
+          practical_hours?: number | null
+          prerequisites?: string[] | null
+          price_cop?: number | null
+          theory_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dive_sites: {
         Row: {
           created_at: string
@@ -59,6 +187,7 @@ export type Database = {
           certification_level:
             | Database["public"]["Enums"]["dive_certification"]
             | null
+          course_id: string | null
           created_at: string
           depth_achieved: number
           dive_date: string
@@ -66,21 +195,29 @@ export type Database = {
           dive_time: string | null
           dive_type: Database["public"]["Enums"]["dive_type"]
           equipment_check: boolean | null
+          equipment_type: string | null
+          gas_mix: string | null
           id: string
           instructor_id: string
           medical_check: boolean | null
           notes: string | null
           student_id: string
           surface_interval: number | null
+          tank_pressure_end: number | null
+          tank_pressure_start: number | null
           updated_at: string
           visibility: number | null
           water_temperature: number | null
+          weight_used: number | null
+          wetsuit_thickness: number | null
+          wetsuit_type: string | null
         }
         Insert: {
           bottom_time: number
           certification_level?:
             | Database["public"]["Enums"]["dive_certification"]
             | null
+          course_id?: string | null
           created_at?: string
           depth_achieved: number
           dive_date: string
@@ -88,21 +225,29 @@ export type Database = {
           dive_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           equipment_check?: boolean | null
+          equipment_type?: string | null
+          gas_mix?: string | null
           id?: string
           instructor_id: string
           medical_check?: boolean | null
           notes?: string | null
           student_id: string
           surface_interval?: number | null
+          tank_pressure_end?: number | null
+          tank_pressure_start?: number | null
           updated_at?: string
           visibility?: number | null
           water_temperature?: number | null
+          weight_used?: number | null
+          wetsuit_thickness?: number | null
+          wetsuit_type?: string | null
         }
         Update: {
           bottom_time?: number
           certification_level?:
             | Database["public"]["Enums"]["dive_certification"]
             | null
+          course_id?: string | null
           created_at?: string
           depth_achieved?: number
           dive_date?: string
@@ -110,17 +255,31 @@ export type Database = {
           dive_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           equipment_check?: boolean | null
+          equipment_type?: string | null
+          gas_mix?: string | null
           id?: string
           instructor_id?: string
           medical_check?: boolean | null
           notes?: string | null
           student_id?: string
           surface_interval?: number | null
+          tank_pressure_end?: number | null
+          tank_pressure_start?: number | null
           updated_at?: string
           visibility?: number | null
           water_temperature?: number | null
+          weight_used?: number | null
+          wetsuit_thickness?: number | null
+          wetsuit_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "dives_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dives_dive_site_id_fkey"
             columns: ["dive_site_id"]
@@ -138,6 +297,124 @@ export type Database = {
           {
             foreignKeyName: "dives_student_id_fkey"
             columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      instructor_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assignment_status: string
+          created_at: string
+          diving_center_id: string
+          id: string
+          instructor_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_status?: string
+          created_at?: string
+          diving_center_id: string
+          id?: string
+          instructor_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_status?: string
+          created_at?: string
+          diving_center_id?: string
+          id?: string
+          instructor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "instructor_assignments_diving_center_id_fkey"
+            columns: ["diving_center_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "instructor_assignments_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      instructor_verifications: {
+        Row: {
+          certification_agency: string
+          certification_document_url: string | null
+          certification_level: string
+          certification_number: string | null
+          created_at: string
+          expiration_date: string | null
+          id: string
+          instructor_id: string
+          notes: string | null
+          updated_at: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          certification_agency: string
+          certification_document_url?: string | null
+          certification_level: string
+          certification_number?: string | null
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          instructor_id: string
+          notes?: string | null
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          certification_agency?: string
+          certification_document_url?: string | null
+          certification_level?: string
+          certification_number?: string | null
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          instructor_id?: string
+          notes?: string | null
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_verifications_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "instructor_verifications_verified_by_fkey"
+            columns: ["verified_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
