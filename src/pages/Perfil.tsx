@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { User, Mail, Phone, Award, Building2, Save } from "lucide-react";
-import { InstructorVerification } from "@/components/InstructorVerification";
+import { User, Mail, Phone, Award, Building2, Save, Heart, CreditCard } from "lucide-react";
+import InstructorVerification from "@/components/InstructorVerification";
 import { InstructorManagement } from "@/components/InstructorManagement";
 import { EquipmentManagement } from "@/components/EquipmentManagement";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import MedicalCard from "@/components/MedicalCard";
+import SubscriptionStatus from "@/components/SubscriptionStatus";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Perfil() {
@@ -110,7 +112,7 @@ export default function Perfil() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full lg:w-auto grid-cols-3 lg:grid-cols-6">
+          <TabsList className="grid w-full lg:w-auto grid-cols-3 lg:grid-cols-8">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               General
@@ -118,6 +120,14 @@ export default function Perfil() {
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <Award className="h-4 w-4" />
               Analíticas
+            </TabsTrigger>
+            <TabsTrigger value="medical" className="flex items-center gap-2">
+              <Heart className="h-4 w-4" />
+              Médico
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Suscripción
             </TabsTrigger>
             {userProfile.role === 'instructor' && (
               <TabsTrigger value="verification" className="flex items-center gap-2">
@@ -289,12 +299,17 @@ export default function Perfil() {
             <AnalyticsDashboard />
           </TabsContent>
 
+          <TabsContent value="medical">
+            <MedicalCard viewMode={userProfile.role === 'instructor' ? 'instructor' : 'student'} />
+          </TabsContent>
+
+          <TabsContent value="subscription">
+            <SubscriptionStatus />
+          </TabsContent>
+
           {userProfile.role === 'instructor' && (
             <TabsContent value="verification">
-              <InstructorVerification 
-                verification={verification} 
-                onUpdate={fetchVerification}
-              />
+              <InstructorVerification viewMode="instructor" />
             </TabsContent>
           )}
 
