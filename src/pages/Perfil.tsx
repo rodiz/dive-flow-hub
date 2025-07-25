@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { User, Mail, Phone, Award, Building2, Save } from "lucide-react";
 import { InstructorVerification } from "@/components/InstructorVerification";
 import { InstructorManagement } from "@/components/InstructorManagement";
+import { EquipmentManagement } from "@/components/EquipmentManagement";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Perfil() {
@@ -108,10 +110,14 @@ export default function Perfil() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full lg:w-auto grid-cols-2 lg:grid-cols-4">
+          <TabsList className="grid w-full lg:w-auto grid-cols-3 lg:grid-cols-6">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               General
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Analíticas
             </TabsTrigger>
             {userProfile.role === 'instructor' && (
               <TabsTrigger value="verification" className="flex items-center gap-2">
@@ -120,10 +126,16 @@ export default function Perfil() {
               </TabsTrigger>
             )}
             {userProfile.role === 'diving_center' && (
-              <TabsTrigger value="instructors" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Instructores
-              </TabsTrigger>
+              <>
+                <TabsTrigger value="instructors" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Instructores
+                </TabsTrigger>
+                <TabsTrigger value="equipment" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Equipamiento
+                </TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -273,6 +285,10 @@ export default function Perfil() {
             </div>
           </TabsContent>
 
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
+          </TabsContent>
+
           {userProfile.role === 'instructor' && (
             <TabsContent value="verification">
               <InstructorVerification 
@@ -283,9 +299,14 @@ export default function Perfil() {
           )}
 
           {userProfile.role === 'diving_center' && (
-            <TabsContent value="instructors">
-              <InstructorManagement viewMode="diving_center" />
-            </TabsContent>
+            <>
+              <TabsContent value="instructors">
+                <InstructorManagement viewMode="diving_center" />
+              </TabsContent>
+              <TabsContent value="equipment">
+                <EquipmentManagement />
+              </TabsContent>
+            </>
           )}
         </Tabs>
       </div>
