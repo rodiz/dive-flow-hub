@@ -1,11 +1,40 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Waves, BookOpen, Users, MapPin, Shield, Star, CheckCircle } from "lucide-react";
 import heroImage from "@/assets/hero-diving.jpg";
 import oceanPattern from "@/assets/ocean-pattern.jpg";
+import PaymentButton from "@/components/PaymentButton";
+import SubscriptionStatus from "@/components/SubscriptionStatus";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const [plans, setPlans] = useState([]);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    fetchPlans();
+    
+    // Check if user is logged in
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) {
+        setUserEmail(data.user.email);
+      }
+    });
+  }, []);
+
+  const fetchPlans = async () => {
+    const { data, error } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('active', true);
+    
+    if (!error && data) {
+      setPlans(data);
+    }
+  };
+
   const features = [
     {
       icon: BookOpen,
@@ -209,6 +238,63 @@ const Index = () => {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Subscription Status */}
+      {userEmail && (
+        <section className="py-12 bg-muted/50">
+          <div className="container">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-primary mb-4">
+                Tu Suscripción
+              </h2>
+            </div>
+            <div className="max-w-2xl mx-auto">
+              <SubscriptionStatus userEmail={userEmail} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-gradient-surface">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-primary mb-4">
+              Planes de Suscripción
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Escoge el plan que mejor se adapte a las necesidades de tu centro de buceo
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {plans.map((plan) => (
+              <div key={plan.id} className="flex flex-col">
+                <PaymentButton
+                  planId={plan.id}
+                  planName={plan.name}
+                  price={plan.price_cop}
+                  description={plan.description || "Acceso completo a todas las funciones"}
+                />
+              </div>
+            ))}
+          </div>
+
+          {!userEmail && (
+            <div className="text-center mt-12">
+              <Card className="max-w-md mx-auto">
+                <CardContent className="p-6">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No necesitas crear una cuenta para realizar el pago.
+                    Solo ingresa tu email y serás redirigido a Wompi.
+                  </p>
+                  <Badge variant="secondary">Pago como invitado disponible</Badge>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </section>
 

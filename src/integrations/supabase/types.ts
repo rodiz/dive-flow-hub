@@ -59,12 +59,92 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          interval_days: number
+          name: string
+          price_cop: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          interval_days?: number
+          name: string
+          price_cop: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          interval_days?: number
+          name?: string
+          price_cop?: number
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          plan_id: string
+          starts_at: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          wompi_transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          plan_id: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          wompi_transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          plan_id?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          wompi_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_active_subscription: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "instructor" | "student"

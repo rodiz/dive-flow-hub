@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Inmersiones from "./pages/Inmersiones";
 import Estudiantes from "./pages/Estudiantes";
 import Perfil from "./pages/Perfil";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/inmersiones" element={<Inmersiones />} />
           <Route path="/estudiantes" element={<Estudiantes />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
