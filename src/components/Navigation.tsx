@@ -18,7 +18,7 @@ const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, userProfile, loading, signOut } = useAuth();
 
   const navItems = [
     { href: "/", label: "Inicio", icon: Waves },
@@ -37,8 +37,24 @@ const Navigation = () => {
   };
 
   const getUserInitials = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return userProfile.first_name.charAt(0).toUpperCase() + userProfile.last_name.charAt(0).toUpperCase();
+    }
     if (!user?.email) return "U";
     return user.email.charAt(0).toUpperCase();
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'instructor':
+        return 'Instructor';
+      case 'student':
+        return 'Estudiante';
+      case 'diving_center':
+        return 'Centro de Buceo';
+      default:
+        return 'Usuario';
+    }
   };
 
   const NavLinks = ({ mobile = false }) => (
@@ -105,10 +121,10 @@ const Navigation = () => {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.email}
+                      {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : user.email}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      Usuario autenticado
+                      {userProfile?.role ? getRoleLabel(userProfile.role) : 'Usuario'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -186,8 +202,12 @@ const Navigation = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">{user.email}</span>
-                        <span className="text-xs text-muted-foreground">Usuario</span>
+                        <span className="text-sm font-medium">
+                          {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : user.email}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {userProfile?.role ? getRoleLabel(userProfile.role) : 'Usuario'}
+                        </span>
                       </div>
                     </div>
                     <Button variant="ghost" className="justify-start" onClick={() => { navigate("/perfil"); setIsOpen(false); }}>

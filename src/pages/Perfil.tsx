@@ -1,223 +1,294 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Edit, Settings, BookOpen, Award, Clock, MapPin, Phone, Mail, Calendar, Shield } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { User, Mail, Phone, Award, Building2, Save } from "lucide-react";
+import { InstructorVerification } from "@/components/InstructorVerification";
+import { InstructorManagement } from "@/components/InstructorManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const Perfil = () => {
-  const instructorData = {
-    name: "Roberto Fernández",
-    email: "roberto.fernandez@divelogpro.com",
-    phone: "+34 612 345 678",
-    role: "Instructor Principal",
-    certifications: ["PADI Master Instructor", "TDI Technical Instructor", "DAN Oxygen Provider"],
-    licenseNumber: "PADI-MI-12345",
-    experience: "15 años",
-    totalStudents: 247,
-    totalDives: 1250,
-    specialties: ["Buceo Técnico", "Buceo en Cuevas", "Primeros Auxilios"],
-    joinDate: "2009-03-15",
-    lastLogin: "2024-01-20 14:30"
+export default function Perfil() {
+  const { user, userProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [verification, setVerification] = useState<any>(null);
+  const [profile, setProfile] = useState({
+    first_name: userProfile?.first_name || "",
+    last_name: userProfile?.last_name || "",
+    phone: userProfile?.phone || "",
+    certification_level: userProfile?.certification_level || "",
+    certification_agency: userProfile?.certification_agency || "",
+    experience_years: userProfile?.experience_years || 0,
+  });
+
+  useEffect(() => {
+    setProfile({
+      first_name: userProfile?.first_name || "",
+      last_name: userProfile?.last_name || "",
+      phone: userProfile?.phone || "",
+      certification_level: userProfile?.certification_level || "",
+      certification_agency: userProfile?.certification_agency || "",
+      experience_years: userProfile?.experience_years || 0,
+    });
+
+    if (userProfile?.role === 'instructor') {
+      fetchVerification();
+    }
+  }, [userProfile]);
+
+  const fetchVerification = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('instructor_verifications')
+        .select('*')
+        .eq('instructor_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setVerification(data);
+    } catch (error) {
+      console.error('Error fetching verification:', error);
+    }
   };
 
-  const recentActivity = [
-    { type: "dive", description: "Inmersión registrada en Arrecife El Paraíso", date: "hace 2 horas" },
-    { type: "student", description: "Nuevo estudiante María García registrado", date: "hace 1 día" },
-    { type: "medical", description: "Chequeo médico aprobado para Carlos López", date: "hace 2 días" },
-    { type: "certification", description: "Certificación Advanced Open Water otorgada", date: "hace 3 días" }
-  ];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
 
-  const achievements = [
-    { title: "Master Instructor", description: "500+ estudiantes certificados", icon: Award },
-    { title: "Safety First", description: "0 incidentes en 2023", icon: Shield },
-    { title: "Explorer", description: "50+ sitios de buceo visitados", icon: MapPin },
-    { title: "Veteran", description: "15 años de experiencia", icon: Clock }
-  ];
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(profile)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      toast.success("Perfil actualizado exitosamente");
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error("Error al actualizar el perfil");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'instructor':
+        return 'Instructor';
+      case 'student':
+        return 'Estudiante';
+      case 'diving_center':
+        return 'Centro de Buceo';
+      default:
+        return 'Usuario';
+    }
+  };
+
+  if (!user || !userProfile) {
+    return <div className="flex justify-center items-center min-h-screen">Cargando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-surface">
       <div className="container py-8">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-bold text-primary mb-2">Mi Perfil</h1>
             <p className="text-xl text-muted-foreground">
-              Información personal y estadísticas profesionales
+              Información personal y configuración de cuenta
             </p>
           </div>
-          <Button size="lg" className="bg-gradient-ocean shadow-depth">
-            <Edit className="w-5 h-5 mr-2" />
-            Editar Perfil
-          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <Card className="lg:col-span-1 shadow-depth">
-            <CardHeader className="text-center">
-              <Avatar className="w-32 h-32 mx-auto mb-4">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-gradient-ocean text-primary-foreground text-3xl">
-                  RF
-                </AvatarFallback>
-              </Avatar>
-              <CardTitle className="text-2xl text-primary">{instructorData.name}</CardTitle>
-              <CardDescription className="text-lg">{instructorData.role}</CardDescription>
-              <Badge className="mx-auto mt-2 bg-accent text-accent-foreground">
-                Licencia: {instructorData.licenseNumber}
-              </Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{instructorData.email}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{instructorData.phone}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">Miembro desde {instructorData.joinDate}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">Último acceso: {instructorData.lastLogin}</span>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-primary">{instructorData.totalStudents}</p>
-                  <p className="text-xs text-muted-foreground">Estudiantes</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-primary">{instructorData.totalDives}</p>
-                  <p className="text-xs text-muted-foreground">Inmersiones</p>
-                </div>
-              </div>
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full lg:w-auto grid-cols-2 lg:grid-cols-4">
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              General
+            </TabsTrigger>
+            {userProfile.role === 'instructor' && (
+              <TabsTrigger value="verification" className="flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                Verificación
+              </TabsTrigger>
+            )}
+            {userProfile.role === 'diving_center' && (
+              <TabsTrigger value="instructors" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Instructores
+              </TabsTrigger>
+            )}
+          </TabsList>
 
-              <Button variant="outline" className="w-full">
-                <Settings className="w-4 h-4 mr-2" />
-                Configuración
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Certifications */}
-            <Card className="shadow-surface">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-accent" />
-                  Certificaciones y Especialidades
-                </CardTitle>
-                <CardDescription>
-                  Credenciales profesionales y áreas de especialización
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-3">Certificaciones Principales:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {instructorData.certifications.map((cert, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                        <div className="w-10 h-10 bg-gradient-ocean rounded-lg flex items-center justify-center">
-                          <Award className="w-5 h-5 text-primary-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{cert}</p>
-                          <p className="text-xs text-muted-foreground">Vigente</p>
-                        </div>
-                      </div>
-                    ))}
+          <TabsContent value="general">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Profile Info Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Información Personal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="w-16 h-16 bg-gradient-ocean rounded-full flex items-center justify-center text-primary-foreground text-xl font-bold">
+                      {profile.first_name?.[0]}{profile.last_name?.[0]}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {profile.first_name} {profile.last_name}
+                      </h3>
+                      <p className="text-muted-foreground">{getRoleLabel(userProfile.role)}</p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {userProfile.email}
+                      </p>
+                    </div>
                   </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h4 className="font-medium mb-3">Especialidades:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {instructorData.specialties.map((specialty, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {specialty}
-                      </Badge>
-                    ))}
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {profile.phone || 'No especificado'}
+                      </span>
+                    </div>
+                    {userProfile.role === 'instructor' && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Award className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {profile.certification_level || 'No especificado'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {profile.certification_agency || 'No especificado'}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Achievements */}
-            <Card className="shadow-surface">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-accent" />
-                  Logros y Reconocimientos
-                </CardTitle>
-                <CardDescription>
-                  Hitos alcanzados en tu carrera profesional
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {achievements.map((achievement, index) => {
-                    const Icon = achievement.icon;
-                    return (
-                      <div key={index} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                        <div className="w-12 h-12 bg-gradient-ocean rounded-lg flex items-center justify-center">
-                          <Icon className="w-6 h-6 text-primary-foreground" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-primary">{achievement.title}</h4>
-                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                        </div>
+              {/* Edit Profile Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Editar Perfil</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="first_name">Nombre</Label>
+                        <Input
+                          id="first_name"
+                          value={profile.first_name}
+                          onChange={(e) => setProfile(prev => ({ ...prev, first_name: e.target.value }))}
+                          placeholder="Tu nombre"
+                        />
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card className="shadow-surface">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-accent" />
-                  Actividad Reciente
-                </CardTitle>
-                <CardDescription>
-                  Últimas acciones realizadas en la plataforma
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="w-2 h-2 bg-accent rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm">{activity.description}</p>
-                        <p className="text-xs text-muted-foreground">{activity.date}</p>
+                      <div>
+                        <Label htmlFor="last_name">Apellido</Label>
+                        <Input
+                          id="last_name"
+                          value={profile.last_name}
+                          onChange={(e) => setProfile(prev => ({ ...prev, last_name: e.target.value }))}
+                          placeholder="Tu apellido"
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full mt-4">
-                  Ver historial completo
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+
+                    <div>
+                      <Label htmlFor="phone">Teléfono</Label>
+                      <Input
+                        id="phone"
+                        value={profile.phone}
+                        onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Tu número de teléfono"
+                      />
+                    </div>
+
+                    {userProfile.role === 'instructor' && (
+                      <>
+                        <div>
+                          <Label htmlFor="certification_level">Nivel de Certificación</Label>
+                          <Input
+                            id="certification_level"
+                            value={profile.certification_level}
+                            onChange={(e) => setProfile(prev => ({ ...prev, certification_level: e.target.value }))}
+                            placeholder="Ej: Open Water Instructor"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="certification_agency">Agencia de Certificación</Label>
+                          <Select 
+                            value={profile.certification_agency} 
+                            onValueChange={(value) => setProfile(prev => ({ ...prev, certification_agency: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona agencia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="PADI">PADI</SelectItem>
+                              <SelectItem value="NAUI">NAUI</SelectItem>
+                              <SelectItem value="SSI">SSI</SelectItem>
+                              <SelectItem value="CMAS">CMAS</SelectItem>
+                              <SelectItem value="ACUC">ACUC</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="experience_years">Años de Experiencia</Label>
+                          <Input
+                            id="experience_years"
+                            type="number"
+                            value={profile.experience_years}
+                            onChange={(e) => setProfile(prev => ({ ...prev, experience_years: parseInt(e.target.value) || 0 }))}
+                            min="0"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <Button type="submit" disabled={loading} className="w-full">
+                      <Save className="h-4 w-4 mr-2" />
+                      {loading ? "Guardando..." : "Guardar Cambios"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {userProfile.role === 'instructor' && (
+            <TabsContent value="verification">
+              <InstructorVerification 
+                verification={verification} 
+                onUpdate={fetchVerification}
+              />
+            </TabsContent>
+          )}
+
+          {userProfile.role === 'diving_center' && (
+            <TabsContent value="instructors">
+              <InstructorManagement viewMode="diving_center" />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   );
-};
-
-export default Perfil;
+}
