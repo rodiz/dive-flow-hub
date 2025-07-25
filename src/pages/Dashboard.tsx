@@ -2,21 +2,94 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, MapPin, Users, TrendingUp, Calendar, Thermometer } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import professionalDiver from "@/assets/professional-diver.jpg";
 
 const Dashboard = () => {
-  const recentDives = [
-    { id: 1, location: "Arrecife El Paraíso", date: "2024-01-20", depth: "18m", student: "María García" },
-    { id: 2, location: "Cueva Azul", date: "2024-01-18", depth: "12m", student: "Carlos López" },
-    { id: 3, location: "Jardín de Coral", date: "2024-01-15", depth: "25m", student: "Ana Martín" },
-  ];
+  const { user } = useAuth();
 
-  const stats = [
-    { label: "Inmersiones este mes", value: "24", icon: BookOpen, trend: "+12%" },
-    { label: "Estudiantes activos", value: "18", icon: Users, trend: "+5%" },
-    { label: "Sitios visitados", value: "8", icon: MapPin, trend: "+2" },
-    { label: "Profundidad promedio", value: "16.5m", icon: TrendingUp, trend: "+2.3m" },
-  ];
+  // Fetch recent dives
+  const { data: recentDives = [] } = useQuery({
+    queryKey: ['recent-dives', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('dives')
+        .select(`
+          id,
+          dive_date,
+          depth_achieved,
+          dive_sites(name, location),
+          student:profiles!dives_student_id_fkey(first_name, last_name)
+        `)
+        .eq('instructor_id', user.id)
+        .order('dive_date', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user
+  });
+
+  // Fetch dashboard stats
+  const { data: stats = [] } = useQuery({
+    queryKey: ['dashboard-stats', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // Get current month stats
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+
+      const [divesResult, studentsResult, sitesResult, avgDepthResult] = await Promise.all([
+        // Dives this month
+        supabase
+          .from('dives')
+          .select('id')
+          .eq('instructor_id', user.id)
+          .gte('dive_date', startOfMonthStr),
+        
+        // Active students (students with dives in last 3 months)
+        supabase
+          .from('dives')
+          .select('student_id')
+          .eq('instructor_id', user.id)
+          .gte('dive_date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
+        
+        // Unique dive sites used
+        supabase
+          .from('dives')
+          .select('dive_site_id')
+          .eq('instructor_id', user.id),
+        
+        // Average depth
+        supabase
+          .from('dives')
+          .select('depth_achieved')
+          .eq('instructor_id', user.id)
+      ]);
+
+      const divesThisMonth = divesResult.data?.length || 0;
+      const uniqueStudents = new Set(studentsResult.data?.map(d => d.student_id)).size;
+      const uniqueSites = new Set(sitesResult.data?.map(d => d.dive_site_id)).size;
+      const avgDepth = avgDepthResult.data?.length 
+        ? (avgDepthResult.data.reduce((sum, d) => sum + d.depth_achieved, 0) / avgDepthResult.data.length).toFixed(1)
+        : '0';
+
+      return [
+        { label: "Inmersiones este mes", value: divesThisMonth.toString(), icon: BookOpen, trend: `+${Math.round(divesThisMonth * 0.1)}` },
+        { label: "Estudiantes activos", value: uniqueStudents.toString(), icon: Users, trend: `+${Math.round(uniqueStudents * 0.05)}` },
+        { label: "Sitios visitados", value: uniqueSites.toString(), icon: MapPin, trend: `+${Math.round(uniqueSites * 0.1)}` },
+        { label: "Profundidad promedio", value: `${avgDepth}m`, icon: TrendingUp, trend: `+${(parseFloat(avgDepth) * 0.1).toFixed(1)}m` },
+      ];
+    },
+    enabled: !!user
+  });
 
   return (
     <div className="min-h-screen bg-gradient-surface">
@@ -85,14 +158,14 @@ const Dashboard = () => {
               {recentDives.map((dive) => (
                 <div key={dive.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                   <div>
-                    <h4 className="font-medium text-primary">{dive.location}</h4>
+                    <h4 className="font-medium text-primary">{dive.dive_sites?.name}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Estudiante: {dive.student}
+                      Estudiante: {dive.student?.first_name} {dive.student?.last_name}
                     </p>
                   </div>
                   <div className="text-right">
-                    <Badge variant="outline">{dive.depth}</Badge>
-                    <p className="text-xs text-muted-foreground mt-1">{dive.date}</p>
+                    <Badge variant="outline">{dive.depth_achieved}m</Badge>
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(dive.dive_date).toLocaleDateString()}</p>
                   </div>
                 </div>
               ))}

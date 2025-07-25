@@ -14,6 +14,221 @@ export type Database = {
   }
   public: {
     Tables: {
+      dive_sites: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty_level: number | null
+          id: string
+          location: string
+          max_depth: number
+          name: string
+          updated_at: string
+          visibility: number | null
+          water_temperature: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty_level?: number | null
+          id?: string
+          location: string
+          max_depth: number
+          name: string
+          updated_at?: string
+          visibility?: number | null
+          water_temperature?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty_level?: number | null
+          id?: string
+          location?: string
+          max_depth?: number
+          name?: string
+          updated_at?: string
+          visibility?: number | null
+          water_temperature?: number | null
+        }
+        Relationships: []
+      }
+      dives: {
+        Row: {
+          bottom_time: number
+          certification_level:
+            | Database["public"]["Enums"]["dive_certification"]
+            | null
+          created_at: string
+          depth_achieved: number
+          dive_date: string
+          dive_site_id: string
+          dive_time: string | null
+          dive_type: Database["public"]["Enums"]["dive_type"]
+          equipment_check: boolean | null
+          id: string
+          instructor_id: string
+          medical_check: boolean | null
+          notes: string | null
+          student_id: string
+          surface_interval: number | null
+          updated_at: string
+          visibility: number | null
+          water_temperature: number | null
+        }
+        Insert: {
+          bottom_time: number
+          certification_level?:
+            | Database["public"]["Enums"]["dive_certification"]
+            | null
+          created_at?: string
+          depth_achieved: number
+          dive_date: string
+          dive_site_id: string
+          dive_time?: string | null
+          dive_type?: Database["public"]["Enums"]["dive_type"]
+          equipment_check?: boolean | null
+          id?: string
+          instructor_id: string
+          medical_check?: boolean | null
+          notes?: string | null
+          student_id: string
+          surface_interval?: number | null
+          updated_at?: string
+          visibility?: number | null
+          water_temperature?: number | null
+        }
+        Update: {
+          bottom_time?: number
+          certification_level?:
+            | Database["public"]["Enums"]["dive_certification"]
+            | null
+          created_at?: string
+          depth_achieved?: number
+          dive_date?: string
+          dive_site_id?: string
+          dive_time?: string | null
+          dive_type?: Database["public"]["Enums"]["dive_type"]
+          equipment_check?: boolean | null
+          id?: string
+          instructor_id?: string
+          medical_check?: boolean | null
+          notes?: string | null
+          student_id?: string
+          surface_interval?: number | null
+          updated_at?: string
+          visibility?: number | null
+          water_temperature?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dives_dive_site_id_fkey"
+            columns: ["dive_site_id"]
+            isOneToOne: false
+            referencedRelation: "dive_sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dives_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "dives_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      medical_records: {
+        Row: {
+          allergies: string | null
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          cleared_to_dive: boolean | null
+          created_at: string
+          dive_id: string | null
+          fitness_level: number | null
+          heart_rate: number | null
+          height: number | null
+          id: string
+          instructor_id: string
+          medical_conditions: string | null
+          medications: string | null
+          notes: string | null
+          recorded_at: string
+          student_id: string
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          allergies?: string | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          cleared_to_dive?: boolean | null
+          created_at?: string
+          dive_id?: string | null
+          fitness_level?: number | null
+          heart_rate?: number | null
+          height?: number | null
+          id?: string
+          instructor_id: string
+          medical_conditions?: string | null
+          medications?: string | null
+          notes?: string | null
+          recorded_at?: string
+          student_id: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          allergies?: string | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          cleared_to_dive?: boolean | null
+          created_at?: string
+          dive_id?: string | null
+          fitness_level?: number | null
+          heart_rate?: number | null
+          height?: number | null
+          id?: string
+          instructor_id?: string
+          medical_conditions?: string | null
+          medications?: string | null
+          notes?: string | null
+          recorded_at?: string
+          student_id?: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_records_dive_id_fkey"
+            columns: ["dive_id"]
+            isOneToOne: false
+            referencedRelation: "dives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "medical_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           certification_agency: string | null
@@ -147,6 +362,13 @@ export type Database = {
       }
     }
     Enums: {
+      dive_certification:
+        | "open_water"
+        | "advanced"
+        | "rescue"
+        | "divemaster"
+        | "instructor"
+      dive_type: "training" | "fun" | "certification" | "specialty"
       user_role: "instructor" | "student"
     }
     CompositeTypes: {
@@ -275,6 +497,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      dive_certification: [
+        "open_water",
+        "advanced",
+        "rescue",
+        "divemaster",
+        "instructor",
+      ],
+      dive_type: ["training", "fun", "certification", "specialty"],
       user_role: ["instructor", "student"],
     },
   },
