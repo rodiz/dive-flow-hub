@@ -189,6 +189,8 @@ export type Database = {
             | null
           course_id: string | null
           created_at: string
+          current_direction: string | null
+          current_strength: number | null
           depth_achieved: number
           dive_date: string
           dive_site_id: string
@@ -201,13 +203,17 @@ export type Database = {
           instructor_id: string
           medical_check: boolean | null
           notes: string | null
+          photos: string[] | null
+          sea_conditions: string | null
           student_id: string
           surface_interval: number | null
           tank_pressure_end: number | null
           tank_pressure_start: number | null
           updated_at: string
+          videos: string[] | null
           visibility: number | null
           water_temperature: number | null
+          weather_conditions: string | null
           weight_used: number | null
           wetsuit_thickness: number | null
           wetsuit_type: string | null
@@ -219,6 +225,8 @@ export type Database = {
             | null
           course_id?: string | null
           created_at?: string
+          current_direction?: string | null
+          current_strength?: number | null
           depth_achieved: number
           dive_date: string
           dive_site_id: string
@@ -231,13 +239,17 @@ export type Database = {
           instructor_id: string
           medical_check?: boolean | null
           notes?: string | null
+          photos?: string[] | null
+          sea_conditions?: string | null
           student_id: string
           surface_interval?: number | null
           tank_pressure_end?: number | null
           tank_pressure_start?: number | null
           updated_at?: string
+          videos?: string[] | null
           visibility?: number | null
           water_temperature?: number | null
+          weather_conditions?: string | null
           weight_used?: number | null
           wetsuit_thickness?: number | null
           wetsuit_type?: string | null
@@ -249,6 +261,8 @@ export type Database = {
             | null
           course_id?: string | null
           created_at?: string
+          current_direction?: string | null
+          current_strength?: number | null
           depth_achieved?: number
           dive_date?: string
           dive_site_id?: string
@@ -261,13 +275,17 @@ export type Database = {
           instructor_id?: string
           medical_check?: boolean | null
           notes?: string | null
+          photos?: string[] | null
+          sea_conditions?: string | null
           student_id?: string
           surface_interval?: number | null
           tank_pressure_end?: number | null
           tank_pressure_start?: number | null
           updated_at?: string
+          videos?: string[] | null
           visibility?: number | null
           water_temperature?: number | null
+          weather_conditions?: string | null
           weight_used?: number | null
           wetsuit_thickness?: number | null
           wetsuit_type?: string | null
@@ -302,6 +320,120 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      equipment_inventory: {
+        Row: {
+          brand: string | null
+          condition_rating: number | null
+          created_at: string
+          diving_center_id: string
+          equipment_type_id: string
+          id: string
+          last_service_date: string | null
+          model: string | null
+          next_service_due: string | null
+          notes: string | null
+          photo_url: string | null
+          purchase_date: string | null
+          serial_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          condition_rating?: number | null
+          created_at?: string
+          diving_center_id: string
+          equipment_type_id: string
+          id?: string
+          last_service_date?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          condition_rating?: number | null
+          created_at?: string
+          diving_center_id?: string
+          equipment_type_id?: string
+          id?: string
+          last_service_date?: string | null
+          model?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equipment_types: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equipment_usage: {
+        Row: {
+          condition_after: number | null
+          condition_before: number | null
+          created_at: string
+          dive_id: string
+          equipment_id: string
+          id: string
+          issues_reported: string | null
+          updated_at: string
+        }
+        Insert: {
+          condition_after?: number | null
+          condition_before?: number | null
+          created_at?: string
+          dive_id: string
+          equipment_id: string
+          id?: string
+          issues_reported?: string | null
+          updated_at?: string
+        }
+        Update: {
+          condition_after?: number | null
+          condition_before?: number | null
+          created_at?: string
+          dive_id?: string
+          equipment_id?: string
+          id?: string
+          issues_reported?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       instructor_assignments: {
         Row: {
@@ -420,6 +552,48 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      maintenance_logs: {
+        Row: {
+          cost_cop: number | null
+          created_at: string
+          description: string
+          equipment_id: string
+          id: string
+          maintenance_photos: string[] | null
+          maintenance_type: string
+          next_maintenance_due: string | null
+          performed_at: string
+          performed_by: string
+          updated_at: string
+        }
+        Insert: {
+          cost_cop?: number | null
+          created_at?: string
+          description: string
+          equipment_id: string
+          id?: string
+          maintenance_photos?: string[] | null
+          maintenance_type: string
+          next_maintenance_due?: string | null
+          performed_at?: string
+          performed_by: string
+          updated_at?: string
+        }
+        Update: {
+          cost_cop?: number | null
+          created_at?: string
+          description?: string
+          equipment_id?: string
+          id?: string
+          maintenance_photos?: string[] | null
+          maintenance_type?: string
+          next_maintenance_due?: string | null
+          performed_at?: string
+          performed_by?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       medical_records: {
         Row: {
