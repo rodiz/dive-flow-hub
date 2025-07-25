@@ -369,7 +369,7 @@ export type Database = {
         | "divemaster"
         | "instructor"
       dive_type: "training" | "fun" | "certification" | "specialty"
-      user_role: "instructor" | "student"
+      user_role: "instructor" | "student" | "diving_center"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -505,7 +505,7 @@ export const Constants = {
         "instructor",
       ],
       dive_type: ["training", "fun", "certification", "specialty"],
-      user_role: ["instructor", "student"],
+      user_role: ["instructor", "student", "diving_center"],
     },
   },
 } as const
