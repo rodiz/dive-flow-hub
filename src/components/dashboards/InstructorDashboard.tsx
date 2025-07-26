@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { InstructorReportManager } from "@/components/InstructorReportManager";
+import { StudentManagement } from "@/components/StudentManagement";
 
 export const InstructorDashboard = () => {
   const { user } = useAuth();
@@ -201,7 +202,9 @@ export const InstructorDashboard = () => {
       </div>
 
       {/* Instructor Report Manager */}
-      <InstructorReportManager />
+          <StudentManagement />
+          
+          <InstructorReportManager />
     </div>
   );
 };

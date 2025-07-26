@@ -638,6 +638,42 @@ export type Database = {
           },
         ]
       }
+      instructor_students: {
+        Row: {
+          created_at: string
+          id: string
+          instructor_id: string
+          invited_at: string
+          notes: string | null
+          status: string
+          student_email: string
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instructor_id: string
+          invited_at?: string
+          notes?: string | null
+          status?: string
+          student_email: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instructor_id?: string
+          invited_at?: string
+          notes?: string | null
+          status?: string
+          student_email?: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       instructor_verifications: {
         Row: {
           certification_agency: string
@@ -933,6 +969,36 @@ export type Database = {
           name?: string
           template_data?: Json
           updated_at?: string
+        }
+        Relationships: []
+      }
+      student_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          instructor_id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          instructor_id: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          instructor_id?: string
+          token?: string
+          used_at?: string | null
         }
         Relationships: []
       }
