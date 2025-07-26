@@ -25,11 +25,20 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AuthRedirect />
           <Navigation />
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <>
+                <AuthRedirect />
+                <Index />
+              </>
+            } />
+            <Route path="/auth" element={
+              <>
+                <AuthRedirect />
+                <Auth />
+              </>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
