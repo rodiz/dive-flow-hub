@@ -54,25 +54,35 @@ serve(async (req) => {
       console.log('User already exists:', authData.id);
     }
 
-    // Create or update profile
-    const { error: profileError } = await supabaseAdmin
+    // Check if profile already exists
+    const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .upsert({
-        user_id: authData.id,
-        email: email.trim(),
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        phone: phone?.trim() || null,
-        city: city?.trim() || null,
-        role: 'student'
-      });
+      .select('user_id')
+      .eq('user_id', authData.id)
+      .single();
 
-    if (profileError) {
-      console.error('Profile error:', profileError);
-      throw profileError;
+    if (!existingProfile) {
+      // Create profile only if it doesn't exist
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          user_id: authData.id,
+          email: email.trim(),
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phone?.trim() || null,
+          city: city?.trim() || null,
+          role: 'student'
+        });
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        throw profileError;
+      }
+      console.log('Profile created successfully');
+    } else {
+      console.log('Profile already exists');
     }
-
-    console.log('Profile created/updated successfully');
 
     // Check if instructor-student relationship already exists
     const { data: existingRelation } = await supabaseAdmin
