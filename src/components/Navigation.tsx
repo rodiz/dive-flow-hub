@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Waves, BookOpen, Users, MapPin, User, LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import NotificationSystem from "./NotificationSystem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -104,6 +105,7 @@ const Navigation = () => {
 
         {/* Auth Section */}
         <div className="hidden md:flex items-center gap-2">
+          {user && <NotificationSystem />}
           {loading ? (
             <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
           ) : user ? (

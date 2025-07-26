@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import professionalDiver from "@/assets/professional-diver.jpg";
+import WeatherWidget from "@/components/WeatherWidget";
+import PerformanceMetrics from "@/components/PerformanceMetrics";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -139,6 +141,12 @@ const Dashboard = () => {
               </Card>
             );
           })}
+        </div>
+
+        {/* Weather and Performance Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <WeatherWidget location="Cartagena, Colombia" />
+          <PerformanceMetrics />
         </div>
 
         {/* Content Grid */}
