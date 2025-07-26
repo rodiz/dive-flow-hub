@@ -24,32 +24,41 @@ serve(async (req) => {
     // Generate temporary password
     const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
     
-    console.log(`Creating student: ${firstName} ${lastName} (${email})`);
+    console.log(`Creating/finding student: ${firstName} ${lastName} (${email})`);
 
-    // Create auth user with admin privileges
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim(),
-      password: tempPassword,
-      user_metadata: {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        role: 'student'
-      },
-      email_confirm: true // Auto-confirm email to skip verification
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    let authData = existingUsers.users.find(user => user.email === email.trim());
 
-    if (authError) {
-      console.error('Auth error:', authError);
-      throw authError;
+    if (!authData) {
+      // Create new auth user
+      const { data: newAuthData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: email.trim(),
+        password: tempPassword,
+        user_metadata: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          role: 'student'
+        },
+        email_confirm: true
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw authError;
+      }
+
+      authData = newAuthData.user;
+      console.log('New user created:', authData.id);
+    } else {
+      console.log('User already exists:', authData.id);
     }
-
-    console.log('User created successfully:', authData.user.id);
 
     // Create or update profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert({
-        user_id: authData.user.id,
+        user_id: authData.id,
         email: email.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -63,21 +72,34 @@ serve(async (req) => {
       throw profileError;
     }
 
-    console.log('Profile created successfully');
+    console.log('Profile created/updated successfully');
 
-    // Add to instructor's students
-    const { error: relationError } = await supabaseAdmin
+    // Check if instructor-student relationship already exists
+    const { data: existingRelation } = await supabaseAdmin
       .from('instructor_students')
-      .insert({
-        instructor_id: instructorId,
-        student_id: authData.user.id,
-        student_email: email.trim(),
-        status: 'active'
-      });
+      .select('id')
+      .eq('instructor_id', instructorId)
+      .eq('student_id', authData.id)
+      .single();
 
-    if (relationError) {
-      console.error('Relation error:', relationError);
-      throw relationError;
+    if (!existingRelation) {
+      // Add to instructor's students
+      const { error: relationError } = await supabaseAdmin
+        .from('instructor_students')
+        .insert({
+          instructor_id: instructorId,
+          student_id: authData.id,
+          student_email: email.trim(),
+          status: 'active'
+        });
+
+      if (relationError) {
+        console.error('Relation error:', relationError);
+        throw relationError;
+      }
+      console.log('Student-instructor relationship created');
+    } else {
+      console.log('Student-instructor relationship already exists');
     }
 
     console.log('Student-instructor relationship created successfully');
@@ -85,7 +107,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        student: authData.user,
+        student: authData,
         tempPassword 
       }),
       {
