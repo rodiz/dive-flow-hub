@@ -34,23 +34,33 @@ export const InstructorDashboard = () => {
     enabled: !!user?.id,
   });
 
-  // Obtener estudiantes activos
+  // Obtener estudiantes activos del instructor
   const { data: enrollments = [] } = useQuery({
-    queryKey: ["instructor-enrollments", user?.id],
+    queryKey: ["instructor-students", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("course_enrollments")
-        .select(`
-          *,
-          courses!inner(name, code),
-          profiles!student_id(first_name, last_name)
-        `)
-        .eq("instructor_id", user?.id)
-        .eq("enrollment_status", "active")
-        .order("start_date", { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
+      // Primero obtener los IDs de estudiantes desde instructor_students
+      const { data: studentRelations, error: relationsError } = await supabase
+        .from('instructor_students')
+        .select('student_id')
+        .eq('instructor_id', user?.id)
+        .eq('status', 'active');
+
+      if (relationsError) throw relationsError;
+
+      if (studentRelations && studentRelations.length > 0) {
+        const studentIds = studentRelations.map(rel => rel.student_id).filter(Boolean);
+        
+        // Luego obtener los perfiles de esos estudiantes
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, user_id')
+          .in('user_id', studentIds);
+
+        if (profilesError) throw profilesError;
+        return profiles || [];
+      } else {
+        return [];
+      }
     },
     enabled: !!user?.id,
   });
@@ -179,20 +189,19 @@ export const InstructorDashboard = () => {
                   No tienes estudiantes activos
                 </p>
               ) : (
-                enrollments.slice(0, 5).map((enrollment) => (
-                  <div key={enrollment.id} className="flex items-center justify-between border-b pb-2">
+                enrollments.slice(0, 5).map((student) => (
+                  <div key={student.user_id} className="flex items-center justify-between border-b pb-2">
                     <div>
                       <p className="font-medium">
-                        {enrollment.profiles?.first_name} {enrollment.profiles?.last_name}
+                        {student.first_name} {student.last_name}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {enrollment.courses?.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Inicio: {new Date(enrollment.start_date).toLocaleDateString()}
+                        Estudiante activo
                       </p>
                     </div>
-                    <Badge variant="default">Activo</Badge>
+                    <Badge variant="secondary">
+                      Activo
+                    </Badge>
                   </div>
                 ))
               )}

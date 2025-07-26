@@ -72,15 +72,33 @@ export default function Estudiantes() {
   };
 
   const fetchAllStudents = async () => {
+    if (!user) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'student')
-        .order('first_name');
+      // Obtener estudiantes del instructor desde instructor_students
+      const { data: studentRelations, error: relationsError } = await supabase
+        .from('instructor_students')
+        .select('student_id')
+        .eq('instructor_id', user.id)
+        .eq('status', 'active');
 
-      if (error) throw error;
-      setAllStudents(data || []);
+      if (relationsError) throw relationsError;
+
+      if (studentRelations && studentRelations.length > 0) {
+        const studentIds = studentRelations.map(rel => rel.student_id).filter(Boolean);
+        
+        // Luego obtener los perfiles de esos estudiantes
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', studentIds)
+          .order('first_name');
+
+        if (profilesError) throw profilesError;
+        setAllStudents(profiles || []);
+      } else {
+        setAllStudents([]);
+      }
     } catch (error) {
       console.error('Error fetching students:', error);
     }
