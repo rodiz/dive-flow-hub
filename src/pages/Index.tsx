@@ -267,14 +267,20 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan) => (
-              <div key={plan.id} className="flex flex-col">
-                <PaymentButton
-                  planId={plan.id}
-                  planName={plan.name}
-                  price={plan.price_cop}
-                  description={plan.description || "Acceso completo a todas las funciones"}
-                />
-              </div>
+              <Card key={plan.id} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <CardDescription>{plan.description || "Acceso completo a todas las funciones"}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-between">
+                  <div className="text-3xl font-bold text-primary mb-4">
+                    ${plan.price_cop?.toLocaleString()} COP/mes
+                  </div>
+                  <PaymentButton planId={plan.id}>
+                    Suscribirse - {plan.name}
+                  </PaymentButton>
+                </CardContent>
+              </Card>
             ))}
           </div>
 

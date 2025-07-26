@@ -8,6 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PaymentButton from "./PaymentButton";
 
+interface SubscriptionStatusProps {
+  userEmail: string;
+}
+
 interface Subscription {
   id: string;
   email: string;
@@ -33,7 +37,7 @@ interface SubscriptionPlan {
   active: boolean;
 }
 
-export default function SubscriptionStatus() {
+export default function SubscriptionStatus({ userEmail }: SubscriptionStatusProps) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);

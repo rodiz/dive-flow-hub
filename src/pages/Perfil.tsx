@@ -304,7 +304,7 @@ export default function Perfil() {
           </TabsContent>
 
           <TabsContent value="subscription">
-            <SubscriptionStatus />
+            <SubscriptionStatus userEmail={user?.email || ''} />
           </TabsContent>
 
           {userProfile.role === 'instructor' && (
