@@ -11,13 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Edit, MapPin, Calendar, Clock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 export default function Inmersiones() {
   const { user, userProfile } = useAuth();
   const [dives, setDives] = useState<any[]>([]);
   const [diveSites, setDiveSites] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Use the unified students hook
+  const { data: instructorStudents = [] } = useInstructorStudents();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDive, setEditingDive] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -34,7 +37,6 @@ export default function Inmersiones() {
   useEffect(() => {
     fetchDives();
     fetchDiveSites();
-    fetchStudents();
   }, [user]);
 
   const fetchDives = async () => {
@@ -75,37 +77,6 @@ export default function Inmersiones() {
     }
   };
 
-  const fetchStudents = async () => {
-    if (!user) return;
-    
-    try {
-      // First get the student IDs from instructor_students
-      const { data: studentRelations, error: relationsError } = await supabase
-        .from('instructor_students')
-        .select('student_id')
-        .eq('instructor_id', user.id)
-        .eq('status', 'active');
-
-      if (relationsError) throw relationsError;
-
-      if (studentRelations && studentRelations.length > 0) {
-        const studentIds = studentRelations.map(rel => rel.student_id).filter(Boolean);
-        
-        // Then get the profiles for those student IDs
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('first_name, last_name, user_id')
-          .in('user_id', studentIds);
-
-        if (profilesError) throw profilesError;
-        setStudents(profiles || []);
-      } else {
-        setStudents([]);
-      }
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,9 +179,9 @@ export default function Inmersiones() {
                         <SelectValue placeholder="Seleccionar estudiante" />
                       </SelectTrigger>
                       <SelectContent>
-                        {students.map((student) => (
-                          <SelectItem key={student.user_id} value={student.user_id}>
-                            {student.first_name} {student.last_name}
+                        {instructorStudents.map((studentRel) => (
+                          <SelectItem key={studentRel.student_id} value={studentRel.student_id || ""}>
+                            {studentRel.profile?.first_name} {studentRel.profile?.last_name}
                           </SelectItem>
                         ))}
                       </SelectContent>

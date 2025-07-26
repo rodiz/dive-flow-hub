@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,27 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UserPlus, Users, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface StudentProfile {
-  user_id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone?: string;
-  city?: string;
-  role: string;
-}
-
-interface InstructorStudent {
-  id: string;
-  instructor_id: string;
-  student_id: string;
-  student_email: string;
-  status: string;
-  invited_at: string;
-  notes?: string;
-  profiles?: StudentProfile;
-}
+import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 export const StudentManagement = () => {
   const { user } = useAuth();
@@ -46,46 +26,8 @@ export const StudentManagement = () => {
     city: ""
   });
 
-  // Fetch instructor's students
-  const { data: instructorStudents, isLoading } = useQuery({
-    queryKey: ['instructor-students', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('instructor_students')
-        .select(`
-          id,
-          instructor_id,
-          student_id,
-          student_email,
-          status,
-          invited_at,
-          notes,
-          created_at,
-          updated_at
-        `)
-        .eq('instructor_id', user?.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Fetch profiles for all students
-      const studentsWithProfiles = await Promise.all(
-        data.map(async (student) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('user_id, email, first_name, last_name, phone, city, role')
-            .eq('user_id', student.student_id)
-            .single();
-          
-          return { ...student, profiles: profile };
-        })
-      );
-      
-      return studentsWithProfiles as InstructorStudent[];
-    },
-    enabled: !!user?.id
-  });
+  // Fetch instructor's students using the unified hook
+  const { data: instructorStudents, isLoading } = useInstructorStudents();
 
   // Create new student
   const createStudentMutation = useMutation({
@@ -253,7 +195,7 @@ export const StudentManagement = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">
-                        {student.profiles?.first_name} {student.profiles?.last_name}
+                        {student.profile?.first_name} {student.profile?.last_name}
                       </h3>
                       <Badge variant="default">Activo</Badge>
                     </div>
@@ -262,15 +204,15 @@ export const StudentManagement = () => {
                       <span>✉️</span> {student.student_email}
                     </p>
                     
-                    {student.profiles?.phone && (
+                    {student.profile?.phone && (
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {student.profiles.phone}
+                        <Phone className="h-3 w-3" /> {student.profile.phone}
                       </p>
                     )}
                     
-                    {student.profiles?.city && (
+                    {student.profile?.city && (
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {student.profiles.city}
+                        <MapPin className="h-3 w-3" /> {student.profile.city}
                       </p>
                     )}
                   </div>

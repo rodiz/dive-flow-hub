@@ -10,10 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Plus, Edit, User, Mail, Award, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
-  const [students, setStudents] = useState<any[]>([]);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,47 +26,14 @@ export default function Estudiantes() {
     enrollment_status: 'active'
   });
 
+  // Use the unified students hook
+  const { data: instructorStudents = [] } = useInstructorStudents();
+
   useEffect(() => {
-    fetchStudents();
     fetchEnrollments();
     fetchCourses();
   }, [user]);
 
-  const fetchStudents = async () => {
-    if (!user) return;
-    
-    try {
-      // Obtener estudiantes del instructor desde instructor_students
-      const { data: studentRelations, error: relationsError } = await supabase
-        .from('instructor_students')
-        .select('student_id')
-        .eq('instructor_id', user.id)
-        .eq('status', 'active');
-
-      if (relationsError) throw relationsError;
-
-      if (studentRelations && studentRelations.length > 0) {
-        const studentIds = studentRelations.map(rel => rel.student_id).filter(Boolean);
-        
-        // Luego obtener los perfiles de esos estudiantes
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', studentIds)
-          .order('first_name');
-
-        if (profilesError) throw profilesError;
-        setStudents(profiles || []);
-      } else {
-        setStudents([]);
-      }
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      toast.error("Error al cargar estudiantes");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchEnrollments = async () => {
     if (!user) return;
@@ -175,9 +142,8 @@ export default function Estudiantes() {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Cargando...</div>;
-  }
+  // Remove the loading state since we're using the hook now
+  // The hook handles its own loading state
 
   return (
     <div className="min-h-screen bg-gradient-surface">
@@ -211,9 +177,9 @@ export default function Estudiantes() {
                       <SelectValue placeholder="Seleccionar estudiante" />
                     </SelectTrigger>
                      <SelectContent>
-                       {students.map((student) => (
-                         <SelectItem key={student.user_id} value={student.user_id}>
-                           {student.first_name} {student.last_name}
+                       {instructorStudents.map((studentRel) => (
+                         <SelectItem key={studentRel.student_id} value={studentRel.student_id || ""}>
+                           {studentRel.profile?.first_name} {studentRel.profile?.last_name}
                          </SelectItem>
                        ))}
                      </SelectContent>
@@ -270,25 +236,25 @@ export default function Estudiantes() {
         </div>
 
         <div className="grid gap-6">
-          {students.length === 0 ? (
+          {instructorStudents.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center">
                 <p className="text-muted-foreground">No hay estudiantes registrados</p>
               </CardContent>
             </Card>
           ) : (
-            students.map((student) => (
-              <Card key={student.user_id} className="hover:shadow-lg transition-shadow">
+            instructorStudents.map((studentRel) => (
+              <Card key={studentRel.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-5 w-5" />
-                        {student.first_name} {student.last_name}
+                        {studentRel.profile?.first_name} {studentRel.profile?.last_name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Mail className="h-3 w-3" />
-                        {student.email}
+                        {studentRel.profile?.email || studentRel.student_email}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -304,17 +270,17 @@ export default function Estudiantes() {
                       <Award className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm">
-                          {student.certification_level || 'Sin certificación'}
+                          {studentRel.profile?.certification_level || 'Sin certificación'}
                         </p>
                         <p className="text-xs text-muted-foreground">Nivel actual</p>
                       </div>
                     </div>
                     <div>
                       <p className="text-sm">
-                        Rol: {student.role === 'student' ? 'Estudiante' : student.role}
+                        Rol: {studentRel.profile?.role === 'student' ? 'Estudiante' : studentRel.profile?.role}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {student.city ? `${student.city}, ${student.country}` : student.country}
+                        {studentRel.profile?.city ? `${studentRel.profile.city}, ${studentRel.profile.country}` : studentRel.profile?.country}
                       </p>
                     </div>
                   </div>

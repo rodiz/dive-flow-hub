@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { InstructorReportManager } from "@/components/InstructorReportManager";
 import { StudentManagement } from "@/components/StudentManagement";
+import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 export const InstructorDashboard = () => {
   const { user } = useAuth();
@@ -34,36 +35,8 @@ export const InstructorDashboard = () => {
     enabled: !!user?.id,
   });
 
-  // Obtener estudiantes activos del instructor
-  const { data: enrollments = [] } = useQuery({
-    queryKey: ["instructor-students", user?.id],
-    queryFn: async () => {
-      // Primero obtener los IDs de estudiantes desde instructor_students
-      const { data: studentRelations, error: relationsError } = await supabase
-        .from('instructor_students')
-        .select('student_id')
-        .eq('instructor_id', user?.id)
-        .eq('status', 'active');
-
-      if (relationsError) throw relationsError;
-
-      if (studentRelations && studentRelations.length > 0) {
-        const studentIds = studentRelations.map(rel => rel.student_id).filter(Boolean);
-        
-        // Luego obtener los perfiles de esos estudiantes
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('first_name, last_name, user_id')
-          .in('user_id', studentIds);
-
-        if (profilesError) throw profilesError;
-        return profiles || [];
-      } else {
-        return [];
-      }
-    },
-    enabled: !!user?.id,
-  });
+  // Obtener estudiantes activos del instructor usando el hook unificado
+  const { data: instructorStudents = [] } = useInstructorStudents();
 
   // Estadísticas del mes actual
   const currentMonth = new Date().getMonth();
@@ -74,7 +47,7 @@ export const InstructorDashboard = () => {
     return diveDate.getMonth() === currentMonth && diveDate.getFullYear() === currentYear;
   });
 
-  const uniqueStudents = enrollments.length;
+  const uniqueStudents = instructorStudents.length;
   const uniqueSites = new Set(dives.map(d => d.dive_site_id)).size;
   const avgDepth = dives.length > 0 ? Math.round(dives.reduce((sum, d) => sum + (d.depth_achieved || 0), 0) / dives.length) : 0;
 
@@ -87,9 +60,9 @@ export const InstructorDashboard = () => {
     },
     {
       title: "Estudiantes Activos",
-      value: enrollments.length,
+      value: instructorStudents.length,
       icon: Users,
-      description: "En cursos activos"
+      description: "Estudiantes bajo tu supervisión"
     },
     {
       title: "Estudiantes Únicos",
@@ -184,19 +157,19 @@ export const InstructorDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {enrollments.length === 0 ? (
+              {instructorStudents.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No tienes estudiantes activos
                 </p>
               ) : (
-                enrollments.slice(0, 5).map((student) => (
-                  <div key={student.user_id} className="flex items-center justify-between border-b pb-2">
+                instructorStudents.slice(0, 5).map((studentRel) => (
+                  <div key={studentRel.id} className="flex items-center justify-between border-b pb-2">
                     <div>
                       <p className="font-medium">
-                        {student.first_name} {student.last_name}
+                        {studentRel.profile?.first_name} {studentRel.profile?.last_name}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Estudiante activo
+                        {studentRel.profile?.email || studentRel.student_email}
                       </p>
                     </div>
                     <Badge variant="secondary">
