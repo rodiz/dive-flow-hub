@@ -90,50 +90,19 @@ export const StudentManagement = () => {
   // Create new student
   const createStudentMutation = useMutation({
     mutationFn: async () => {
-      // Generate temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
-      
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newStudent.email.trim(),
-        password: tempPassword,
-        user_metadata: {
-          first_name: newStudent.firstName.trim(),
-          last_name: newStudent.lastName.trim(),
-          role: 'student'
+      const { data, error } = await supabase.functions.invoke('create-student', {
+        body: {
+          firstName: newStudent.firstName.trim(),
+          lastName: newStudent.lastName.trim(),
+          email: newStudent.email.trim(),
+          phone: newStudent.phone.trim() || null,
+          city: newStudent.city.trim() || null,
+          instructorId: user?.id
         }
       });
 
-      if (authError) throw authError;
-
-      // Create profile (should be handled by trigger, but let's ensure it exists)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: authData.user.id,
-          email: newStudent.email.trim(),
-          first_name: newStudent.firstName.trim(),
-          last_name: newStudent.lastName.trim(),
-          phone: newStudent.phone.trim() || null,
-          city: newStudent.city.trim() || null,
-          role: 'student'
-        });
-
-      if (profileError) throw profileError;
-
-      // Add to instructor's students
-      const { error: relationError } = await supabase
-        .from('instructor_students')
-        .insert({
-          instructor_id: user?.id,
-          student_id: authData.user.id,
-          student_email: newStudent.email.trim(),
-          status: 'active'
-        });
-
-      if (relationError) throw relationError;
-
-      return { student: authData.user, tempPassword };
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({
