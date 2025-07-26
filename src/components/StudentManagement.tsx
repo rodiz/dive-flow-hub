@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, UserPlus, Mail, Users, MessageSquare } from "lucide-react";
+import { UserPlus, Users, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface StudentProfile {
@@ -25,7 +24,7 @@ interface StudentProfile {
 interface InstructorStudent {
   id: string;
   instructor_id: string;
-  student_id?: string;
+  student_id: string;
   student_email: string;
   status: string;
   invited_at: string;
@@ -39,11 +38,13 @@ export const StudentManagement = () => {
   const queryClient = useQueryClient();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [searchEmail, setSearchEmail] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteNotes, setInviteNotes] = useState("");
-  const [searchResults, setSearchResults] = useState<StudentProfile[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    city: ""
+  });
 
   // Fetch instructor's students
   const { data: instructorStudents, isLoading } = useQuery({
@@ -63,23 +64,21 @@ export const StudentManagement = () => {
           updated_at
         `)
         .eq('instructor_id', user?.id)
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Fetch profiles separately for students that exist
+      // Fetch profiles for all students
       const studentsWithProfiles = await Promise.all(
         data.map(async (student) => {
-          if (student.student_id) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('user_id, email, first_name, last_name, phone, city, role')
-              .eq('user_id', student.student_id)
-              .single();
-            
-            return { ...student, profiles: profile };
-          }
-          return { ...student, profiles: null };
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id, email, first_name, last_name, phone, city, role')
+            .eq('user_id', student.student_id)
+            .single();
+          
+          return { ...student, profiles: profile };
         })
       );
       
@@ -88,113 +87,89 @@ export const StudentManagement = () => {
     enabled: !!user?.id
   });
 
-  // Search for existing students
-  const searchStudents = async () => {
-    if (!searchEmail.trim()) return;
-    
-    setIsSearching(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, email, first_name, last_name, phone, city, role')
-        .eq('role', 'student')
-        .ilike('email', `%${searchEmail}%`)
-        .limit(10);
-
-      if (error) throw error;
-      
-      // Filter out students already added by this instructor
-      const existingEmails = instructorStudents?.map(s => s.student_email) || [];
-      const filteredResults = data.filter(student => 
-        !existingEmails.includes(student.email)
-      );
-      
-      setSearchResults(filteredResults);
-    } catch (error) {
-      console.error('Error searching students:', error);
-      toast({
-        title: "Error",
-        description: "Error al buscar estudiantes",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Add existing student
-  const addExistingStudentMutation = useMutation({
-    mutationFn: async (student: StudentProfile) => {
-      const { data, error } = await supabase
-        .from('instructor_students')
-        .insert({
-          instructor_id: user?.id,
-          student_id: student.user_id,
-          student_email: student.email,
-          status: 'active'
-        });
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Estudiante agregado",
-        description: "El estudiante ha sido agregado exitosamente",
-      });
-      queryClient.invalidateQueries({ queryKey: ['instructor-students'] });
-      setSearchEmail("");
-      setSearchResults([]);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Error al agregar estudiante",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Invite new student
-  const inviteStudentMutation = useMutation({
+  // Create new student
+  const createStudentMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('send-student-invitation', {
-        body: { 
-          email: inviteEmail.trim(),
-          notes: inviteNotes.trim(),
-          instructorId: user?.id
+      // Generate temporary password
+      const tempPassword = Math.random().toString(36).slice(-8);
+      
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newStudent.email.trim(),
+        password: tempPassword,
+        user_metadata: {
+          first_name: newStudent.firstName.trim(),
+          last_name: newStudent.lastName.trim(),
+          role: 'student'
         }
       });
 
-      if (error) throw error;
-      return data;
+      if (authError) throw authError;
+
+      // Create profile (should be handled by trigger, but let's ensure it exists)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: authData.user.id,
+          email: newStudent.email.trim(),
+          first_name: newStudent.firstName.trim(),
+          last_name: newStudent.lastName.trim(),
+          phone: newStudent.phone.trim() || null,
+          city: newStudent.city.trim() || null,
+          role: 'student'
+        });
+
+      if (profileError) throw profileError;
+
+      // Add to instructor's students
+      const { error: relationError } = await supabase
+        .from('instructor_students')
+        .insert({
+          instructor_id: user?.id,
+          student_id: authData.user.id,
+          student_email: newStudent.email.trim(),
+          status: 'active'
+        });
+
+      if (relationError) throw relationError;
+
+      return { student: authData.user, tempPassword };
     },
     onSuccess: () => {
       toast({
-        title: "Invitación enviada",
-        description: "Se ha enviado la invitación al estudiante",
+        title: "Estudiante creado",
+        description: "El estudiante ha sido creado exitosamente y está listo para inmersiones",
       });
       queryClient.invalidateQueries({ queryKey: ['instructor-students'] });
-      setInviteEmail("");
-      setInviteNotes("");
+      setNewStudent({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        city: ""
+      });
       setIsAddDialogOpen(false);
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Error al enviar invitación",
+        description: error.message || "Error al crear estudiante",
         variant: "destructive",
       });
     }
   });
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-      active: 'default',
-      pending: 'secondary',
-      invited: 'outline'
-    };
-    return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStudent.firstName.trim() || !newStudent.lastName.trim() || !newStudent.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor completa los campos obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+    createStudentMutation.mutate();
   };
 
   if (isLoading) {
@@ -224,77 +199,72 @@ export const StudentManagement = () => {
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Agregar Estudiante</DialogTitle>
+                <DialogTitle>Crear Nuevo Estudiante</DialogTitle>
               </DialogHeader>
-              <div className="space-y-6">
-                {/* Search existing students */}
-                <div className="space-y-3">
-                  <Label>Buscar Estudiante Existente</Label>
-                  <div className="flex gap-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">Nombre *</Label>
                     <Input
-                      placeholder="Email del estudiante..."
-                      value={searchEmail}
-                      onChange={(e) => setSearchEmail(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && searchStudents()}
+                      id="firstName"
+                      value={newStudent.firstName}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="Nombre"
+                      required
                     />
-                    <Button 
-                      onClick={searchStudents} 
-                      disabled={isSearching}
-                      variant="outline"
-                    >
-                      <Search className="h-4 w-4" />
-                    </Button>
                   </div>
-                  
-                  {searchResults.length > 0 && (
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {searchResults.map((student) => (
-                        <div key={student.user_id} className="flex items-center justify-between p-2 border rounded">
-                          <div>
-                            <div className="font-medium">
-                              {student.first_name} {student.last_name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">{student.email}</div>
-                          </div>
-                          <Button 
-                            size="sm"
-                            onClick={() => addExistingStudentMutation.mutate(student)}
-                            disabled={addExistingStudentMutation.isPending}
-                          >
-                            Agregar
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="space-y-3">
-                    <Label>Invitar Nuevo Estudiante</Label>
+                  <div>
+                    <Label htmlFor="lastName">Apellido *</Label>
                     <Input
-                      placeholder="Email de invitación..."
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
+                      id="lastName"
+                      value={newStudent.lastName}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Apellido"
+                      required
                     />
-                    <Textarea
-                      placeholder="Mensaje personalizado (opcional)..."
-                      value={inviteNotes}
-                      onChange={(e) => setInviteNotes(e.target.value)}
-                      rows={3}
-                    />
-                    <Button 
-                      onClick={() => inviteStudentMutation.mutate()}
-                      disabled={!inviteEmail.trim() || inviteStudentMutation.isPending}
-                      className="w-full"
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      {inviteStudentMutation.isPending ? 'Enviando...' : 'Enviar Invitación'}
-                    </Button>
                   </div>
                 </div>
-              </div>
+                
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newStudent.email}
+                    onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@ejemplo.com"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    value={newStudent.phone}
+                    onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+57 300 123 4567"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="city">Ciudad</Label>
+                  <Input
+                    id="city"
+                    value={newStudent.city}
+                    onChange={(e) => setNewStudent(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="Bogotá, Medellín, etc."
+                  />
+                </div>
+                
+                <Button 
+                  type="submit"
+                  disabled={createStudentMutation.isPending}
+                  className="w-full"
+                >
+                  {createStudentMutation.isPending ? 'Creando...' : 'Crear Estudiante'}
+                </Button>
+              </form>
             </DialogContent>
           </Dialog>
         </CardTitle>
@@ -313,45 +283,31 @@ export const StudentManagement = () => {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      {student.profiles ? (
-                        <h3 className="font-medium">
-                          {student.profiles.first_name} {student.profiles.last_name}
-                        </h3>
-                      ) : (
-                        <h3 className="font-medium text-muted-foreground">
-                          {student.student_email}
-                        </h3>
-                      )}
-                      {getStatusBadge(student.status)}
+                      <h3 className="font-medium">
+                        {student.profiles?.first_name} {student.profiles?.last_name}
+                      </h3>
+                      <Badge variant="default">Activo</Badge>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground">
-                      {student.student_email}
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <span>✉️</span> {student.student_email}
                     </p>
                     
                     {student.profiles?.phone && (
-                      <p className="text-sm text-muted-foreground">
-                        📱 {student.profiles.phone}
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {student.profiles.phone}
                       </p>
                     )}
                     
                     {student.profiles?.city && (
-                      <p className="text-sm text-muted-foreground">
-                        📍 {student.profiles.city}
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {student.profiles.city}
                       </p>
-                    )}
-                    
-                    {student.notes && (
-                      <div className="flex items-start gap-2 mt-2">
-                        <MessageSquare className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                        <p className="text-sm">{student.notes}</p>
-                      </div>
                     )}
                   </div>
                   
                   <div className="text-right text-sm text-muted-foreground">
-                    {student.status === 'active' ? 'Activo' : 
-                     student.status === 'invited' ? 'Invitado' : 'Pendiente'}
+                    Agregado
                     <br />
                     <span className="text-xs">
                       {new Date(student.invited_at).toLocaleDateString()}
