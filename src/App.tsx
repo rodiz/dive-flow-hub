@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Navigation from "./components/Navigation";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Inmersiones from "./pages/Inmersiones";
@@ -27,11 +28,31 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/inmersiones" element={<Inmersiones />} />
-            <Route path="/estudiantes" element={<Estudiantes />} />
-            <Route path="/perfil" element={<Perfil />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/inmersiones" element={
+              <ProtectedRoute allowedRoles={['instructor', 'diving_center']}>
+                <Inmersiones />
+              </ProtectedRoute>
+            } />
+            <Route path="/estudiantes" element={
+              <ProtectedRoute allowedRoles={['instructor', 'diving_center']}>
+                <Estudiantes />
+              </ProtectedRoute>
+            } />
+            <Route path="/perfil" element={
+              <ProtectedRoute>
+                <Perfil />
+              </ProtectedRoute>
+            } />
+            <Route path="/payment-success" element={
+              <ProtectedRoute>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

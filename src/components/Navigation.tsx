@@ -21,13 +21,28 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { user, userProfile, loading, signOut } = useAuth();
 
-  const navItems = [
-    { href: "/", label: "Inicio", icon: Waves },
-    { href: "/dashboard", label: "Dashboard", icon: BookOpen },
-    { href: "/inmersiones", label: "Inmersiones", icon: MapPin },
-    { href: "/estudiantes", label: "Estudiantes", icon: Users },
-    { href: "/perfil", label: "Perfil", icon: User },
-  ];
+  const getNavItems = () => {
+    if (!user) {
+      return [{ href: "/", label: "Inicio", icon: Waves }];
+    }
+
+    const baseItems = [
+      { href: "/", label: "Inicio", icon: Waves },
+      { href: "/dashboard", label: "Dashboard", icon: BookOpen },
+      { href: "/perfil", label: "Perfil", icon: User },
+    ];
+
+    if (userProfile?.role === 'instructor' || userProfile?.role === 'diving_center') {
+      baseItems.splice(2, 0, 
+        { href: "/inmersiones", label: "Inmersiones", icon: MapPin },
+        { href: "/estudiantes", label: "Estudiantes", icon: Users }
+      );
+    }
+
+    return baseItems;
+  };
+
+  const navItems = getNavItems();
 
   const isActive = (path: string) => location.pathname === path;
 

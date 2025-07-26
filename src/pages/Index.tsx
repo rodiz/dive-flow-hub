@@ -93,11 +93,21 @@ const Index = () => {
               La plataforma profesional para centros de buceo, instructores y estudiantes
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-4 shadow-coral">
-                Comenzar Ahora
+              <Button 
+                size="lg" 
+                variant="secondary" 
+                className="text-lg px-8 py-4 shadow-coral"
+                onClick={() => user ? navigate('/dashboard') : navigate('/auth')}
+              >
+                {user ? 'Ir al Dashboard' : 'Comenzar Ahora'}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4 border-white/20 text-white hover:bg-white/10">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 py-4 border-white/20 text-white hover:bg-white/10"
+                onClick={() => navigate('/dashboard')}
+              >
                 Ver Demo
               </Button>
             </div>
@@ -310,10 +320,20 @@ const Index = () => {
             Únete a cientos de profesionales que ya confían en DiveLog Pro
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
-              Prueba Gratuita
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="text-lg px-8 py-4"
+              onClick={() => user ? navigate('/dashboard') : navigate('/auth')}
+            >
+              {user ? 'Ir al Dashboard' : 'Prueba Gratuita'}
             </Button>
-            <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white/20 text-white hover:bg-white/10"
+              onClick={() => window.open('mailto:soporte@divelogpro.com', '_blank')}
+            >
               Contactar Ventas
             </Button>
           </div>
