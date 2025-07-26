@@ -1,288 +1,375 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DiveCard } from "@/components/DiveCard";
-import { StatsChart } from "@/components/StatsChart";
-import { Plus, Search, Filter, MapPin, Calendar, Gauge, BarChart3, List, Grid } from "lucide-react";
-import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { Plus, Edit, MapPin, Calendar, Clock, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-const Inmersiones = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+export default function Inmersiones() {
+  const { user, userProfile } = useAuth();
+  const [dives, setDives] = useState<any[]>([]);
+  const [diveSites, setDiveSites] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingDive, setEditingDive] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    student_id: '',
+    dive_site_id: '',
+    dive_date: '',
+    dive_time: '',
+    depth_achieved: '',
+    bottom_time: '',
+    dive_type: 'training',
+    notes: ''
+  });
 
-  const dives = [
-    {
-      id: 1,
-      location: "Arrecife El Paraíso",
-      date: "2024-01-20",
-      depth: "18m",
-      maxDepth: "22m",
-      duration: "45min",
-      temperature: "24°C",
-      visibility: "25m",
-      current: "Moderada",
-      student: "María García",
-      conditions: "excellent" as const,
-      equipment: ["BCD", "Regulador", "Máscara", "Aletas", "Traje 3mm"],
-      notes: "Inmersión perfecta para practicar flotabilidad. La estudiante mostró gran progreso en control de profundidad y navegación subacuática."
-    },
-    {
-      id: 2,
-      location: "Cueva Azul",
-      date: "2024-01-18",
-      depth: "12m",
-      maxDepth: "15m",
-      duration: "38min",
-      temperature: "26°C",
-      visibility: "20m",
-      current: "Ligera",
-      student: "Carlos López",
-      conditions: "good" as const,
-      equipment: ["BCD", "Regulador", "Máscara", "Aletas", "Traje 5mm", "Linterna"],
-      notes: "Primera inmersión en cueva para el estudiante. Excelente control y respeto por el entorno."
-    },
-    {
-      id: 3,
-      location: "Jardín de Coral",
-      date: "2024-01-15",
-      depth: "25m",
-      maxDepth: "28m",
-      duration: "52min",
-      temperature: "23°C",
-      visibility: "30m",
-      current: "Fuerte",
-      student: "Ana Martín",
-      conditions: "fair" as const,
-      equipment: ["BCD", "Regulador", "Máscara", "Aletas", "Traje 5mm", "Guantes"],
-      notes: "Condiciones desafiantes por corriente. La estudiante manejó bien la situación y completó todos los ejercicios."
-    },
-    {
-      id: 4,
-      location: "Naufragio Santa María",
-      date: "2024-01-12",
-      depth: "30m",
-      maxDepth: "35m",
-      duration: "48min",
-      temperature: "22°C",
-      visibility: "15m",
-      current: "Moderada",
-      student: "Diego Ruiz",
-      conditions: "good" as const,
-      equipment: ["BCD", "Regulador", "Máscara", "Aletas", "Traje 7mm", "Linterna", "Cuchillo"],
-      notes: "Exploración de naufragio. Excelente oportunidad para practicar penetración segura y navegación."
+  useEffect(() => {
+    fetchDives();
+    fetchDiveSites();
+    fetchStudents();
+  }, [user]);
+
+  const fetchDives = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('dives')
+        .select(`
+          *,
+          dive_sites(name, location),
+          profiles!dives_student_id_fkey(first_name, last_name)
+        `)
+        .eq('instructor_id', user.id)
+        .order('dive_date', { ascending: false });
+
+      if (error) throw error;
+      setDives(data || []);
+    } catch (error) {
+      console.error('Error fetching dives:', error);
+      toast.error("Error al cargar inmersiones");
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const monthlyStats = [
-    { label: "Enero", value: 24, trend: 12, trendDirection: "up" as const },
-    { label: "Febrero", value: 18, trend: -8, trendDirection: "down" as const },
-    { label: "Marzo", value: 32, trend: 15, trendDirection: "up" as const },
-    { label: "Abril", value: 28, trend: 5, trendDirection: "up" as const },
-  ];
+  const fetchDiveSites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('dive_sites')
+        .select('*')
+        .order('name');
 
-  const depthStats = [
-    { label: "0-10m", value: 45, trend: 8, trendDirection: "up" as const },
-    { label: "10-20m", value: 67, trend: -3, trendDirection: "down" as const },
-    { label: "20-30m", value: 32, trend: 12, trendDirection: "up" as const },
-    { label: "30m+", value: 18, trend: 25, trendDirection: "up" as const },
-  ];
+      if (error) throw error;
+      setDiveSites(data || []);
+    } catch (error) {
+      console.error('Error fetching dive sites:', error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .select(`
+          student_id,
+          profiles!course_enrollments_student_id_fkey(first_name, last_name, user_id)
+        `)
+        .eq('instructor_id', user.id);
+
+      if (error) throw error;
+      setStudents(data?.map(enrollment => enrollment.profiles) || []);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      const diveData = {
+        ...formData,
+        instructor_id: user.id,
+        depth_achieved: parseInt(formData.depth_achieved),
+        bottom_time: parseInt(formData.bottom_time)
+      };
+
+      if (editingDive) {
+        const { error } = await supabase
+          .from('dives')
+          .update(diveData)
+          .eq('id', editingDive.id);
+
+        if (error) throw error;
+        toast.success("Inmersión actualizada exitosamente");
+      } else {
+        const { error } = await supabase
+          .from('dives')
+          .insert(diveData);
+
+        if (error) throw error;
+        toast.success("Inmersión creada exitosamente");
+      }
+
+      setDialogOpen(false);
+      setEditingDive(null);
+      setFormData({
+        student_id: '',
+        dive_site_id: '',
+        dive_date: '',
+        dive_time: '',
+        depth_achieved: '',
+        bottom_time: '',
+        dive_type: 'training',
+        notes: ''
+      });
+      fetchDives();
+    } catch (error) {
+      console.error('Error saving dive:', error);
+      toast.error("Error al guardar inmersión");
+    }
+  };
+
+  const openEditDialog = (dive: any) => {
+    setEditingDive(dive);
+    setFormData({
+      student_id: dive.student_id,
+      dive_site_id: dive.dive_site_id,
+      dive_date: dive.dive_date,
+      dive_time: dive.dive_time || '',
+      depth_achieved: dive.depth_achieved.toString(),
+      bottom_time: dive.bottom_time.toString(),
+      dive_type: dive.dive_type,
+      notes: dive.notes || ''
+    });
+    setDialogOpen(true);
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">Cargando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-surface">
       <div className="container py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-ocean bg-clip-text text-transparent">
-              Registro de Inmersiones
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Gestiona y registra todas las inmersiones y expediciones
+            <h1 className="text-4xl font-bold text-primary mb-2">Inmersiones</h1>
+            <p className="text-xl text-muted-foreground">
+              Gestiona las inmersiones de tus estudiantes
             </p>
           </div>
-          <Button className="shadow-surface hover:shadow-depth" variant="ocean">
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Inmersión
-          </Button>
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-ocean">
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Inmersión
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingDive ? 'Editar Inmersión' : 'Nueva Inmersión'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="student_id">Estudiante</Label>
+                    <Select value={formData.student_id} onValueChange={(value) => setFormData(prev => ({ ...prev, student_id: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar estudiante" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.map((student) => (
+                          <SelectItem key={student.user_id} value={student.user_id}>
+                            {student.first_name} {student.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="dive_site_id">Sitio de Buceo</Label>
+                    <Select value={formData.dive_site_id} onValueChange={(value) => setFormData(prev => ({ ...prev, dive_site_id: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar sitio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {diveSites.map((site) => (
+                          <SelectItem key={site.id} value={site.id}>
+                            {site.name} - {site.location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dive_date">Fecha</Label>
+                    <Input
+                      id="dive_date"
+                      type="date"
+                      value={formData.dive_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dive_date: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="dive_time">Hora</Label>
+                    <Input
+                      id="dive_time"
+                      type="time"
+                      value={formData.dive_time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dive_time: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="depth_achieved">Profundidad (m)</Label>
+                    <Input
+                      id="depth_achieved"
+                      type="number"
+                      value={formData.depth_achieved}
+                      onChange={(e) => setFormData(prev => ({ ...prev, depth_achieved: e.target.value }))}
+                      min="1"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="bottom_time">Tiempo de fondo (min)</Label>
+                    <Input
+                      id="bottom_time"
+                      type="number"
+                      value={formData.bottom_time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, bottom_time: e.target.value }))}
+                      min="1"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="dive_type">Tipo</Label>
+                    <Select value={formData.dive_type} onValueChange={(value) => setFormData(prev => ({ ...prev, dive_type: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="training">Entrenamiento</SelectItem>
+                        <SelectItem value="certification">Certificación</SelectItem>
+                        <SelectItem value="fun">Recreativo</SelectItem>
+                        <SelectItem value="specialty">Especialidad</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="notes">Notas</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Observaciones sobre la inmersión..."
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full">
+                  {editingDive ? 'Actualizar' : 'Crear'} Inmersión
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <Tabs defaultValue="inmersiones" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="inmersiones">Inmersiones</TabsTrigger>
-            <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
-            <TabsTrigger value="mapas">Mapas & Sitios</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="inmersiones" className="space-y-6">
-            {/* Filters */}
-            <Card className="shadow-surface">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-accent" />
-                    Filtros y Búsqueda
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={viewMode === "grid" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setViewMode("grid")}
-                    >
-                      <Grid className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === "list" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setViewMode("list")}
-                    >
-                      <List className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Buscar ubicación..." className="pl-9" />
-                  </div>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Estudiante" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los estudiantes</SelectItem>
-                      <SelectItem value="maria">María García</SelectItem>
-                      <SelectItem value="carlos">Carlos López</SelectItem>
-                      <SelectItem value="ana">Ana Martín</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Profundidad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las profundidades</SelectItem>
-                      <SelectItem value="shallow">0-15m</SelectItem>
-                      <SelectItem value="medium">15-25m</SelectItem>
-                      <SelectItem value="deep">25m+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="week">Última semana</SelectItem>
-                      <SelectItem value="month">Último mes</SelectItem>
-                      <SelectItem value="quarter">Último trimestre</SelectItem>
-                      <SelectItem value="year">Último año</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        <div className="grid gap-6">
+          {dives.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">No hay inmersiones registradas</p>
               </CardContent>
             </Card>
-
-            {/* Dive Cards */}
-            <div className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
-              {dives.map((dive) => (
-                <DiveCard 
-                  key={dive.id} 
-                  dive={dive} 
-                  viewMode="instructor"
-                  onViewDetails={(id) => console.log(`Ver detalles de inmersión ${id}`)}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="estadisticas" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <StatsChart 
-                title="Inmersiones por Mes"
-                description="Evolución mensual de la actividad de buceo"
-                data={monthlyStats}
-                type="bar"
-              />
-              <StatsChart 
-                title="Distribución por Profundidad"
-                description="Análisis de inmersiones según rangos de profundidad"
-                data={depthStats}
-                type="area"
-              />
-            </div>
-            
-            {/* Additional Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="shadow-surface">
+          ) : (
+            dives.map((dive) => (
+              <Card key={dive.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-lg">Promedio Mensual</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-primary mb-2">25.5</div>
-                  <p className="text-sm text-muted-foreground">inmersiones por mes</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-surface">
-                <CardHeader>
-                  <CardTitle className="text-lg">Profundidad Media</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-accent mb-2">22.3m</div>
-                  <p className="text-sm text-muted-foreground">profundidad promedio</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-surface">
-                <CardHeader>
-                  <CardTitle className="text-lg">Tiempo Total</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-primary-glow mb-2">42.5h</div>
-                  <p className="text-sm text-muted-foreground">tiempo bajo el agua</p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mapas" className="space-y-6">
-            <Card className="shadow-surface">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-accent" />
-                  Sitios de Buceo Populares
-                </CardTitle>
-                <CardDescription>
-                  Ubicaciones más frecuentadas para inmersiones
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { name: "Arrecife El Paraíso", visits: 15, avgDepth: "18m" },
-                    { name: "Jardín de Coral", visits: 12, avgDepth: "25m" },
-                    { name: "Cueva Azul", visits: 8, avgDepth: "12m" },
-                    { name: "Naufragio Santa María", visits: 6, avgDepth: "30m" },
-                  ].map((site, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <div>
-                        <h4 className="font-medium">{site.name}</h4>
-                        <p className="text-sm text-muted-foreground">Profundidad promedio: {site.avgDepth}</p>
-                      </div>
-                      <Badge variant="secondary">{site.visits} visitas</Badge>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        {dive.dive_sites?.name}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {dive.dive_sites?.location}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    <div className="flex gap-2">
+                      <Badge variant={dive.dive_type === 'certification' ? 'default' : 'secondary'}>
+                        {dive.dive_type === 'training' ? 'Entrenamiento' : 
+                         dive.dive_type === 'certification' ? 'Certificación' : 'Recreativo'}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(dive)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {dive.profiles?.first_name} {dive.profiles?.last_name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {new Date(dive.dive_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {dive.bottom_time} min / {dive.depth_achieved}m
+                      </span>
+                    </div>
+                  </div>
+                  {dive.notes && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {dive.notes}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default Inmersiones;
+}
