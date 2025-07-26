@@ -42,10 +42,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      setUserProfile(data);
+      
+      // Si no existe perfil, crear uno básico
+      if (!data) {
+        const { data: userData } = await supabase.auth.getUser();
+        const newProfile = {
+          user_id: userId,
+          email: userData.user?.email || '',
+          first_name: userData.user?.user_metadata?.first_name || '',
+          last_name: userData.user?.user_metadata?.last_name || '',
+          role: 'student' as const
+        };
+        
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([newProfile])
+          .select()
+          .single();
+          
+        if (createError) throw createError;
+        setUserProfile(createdProfile);
+      } else {
+        setUserProfile(data);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUserProfile(null);
