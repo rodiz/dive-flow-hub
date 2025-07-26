@@ -103,7 +103,8 @@ export default function Inmersiones() {
         ...formData,
         instructor_id: user.id,
         depth_achieved: parseInt(formData.depth_achieved),
-        bottom_time: parseInt(formData.bottom_time)
+        bottom_time: parseInt(formData.bottom_time),
+        dive_type: formData.dive_type as "training" | "fun" | "certification" | "specialty"
       };
 
       if (editingDive) {
