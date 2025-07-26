@@ -14,6 +14,7 @@ import { EquipmentManagement } from "@/components/EquipmentManagement";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import MedicalCard from "@/components/MedicalCard";
 import SubscriptionStatus from "@/components/SubscriptionStatus";
+import { DivingCenterProfile } from "@/components/DivingCenterProfile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Perfil() {
@@ -137,6 +138,10 @@ export default function Perfil() {
             )}
             {userProfile.role === 'diving_center' && (
               <>
+                <TabsTrigger value="diving-center" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Centro
+                </TabsTrigger>
                 <TabsTrigger value="instructors" className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Instructores
@@ -294,6 +299,12 @@ export default function Perfil() {
               </Card>
             </div>
           </TabsContent>
+
+          {userProfile.role === 'diving_center' && (
+            <TabsContent value="diving-center">
+              <DivingCenterProfile userProfile={userProfile} />
+            </TabsContent>
+          )}
 
           <TabsContent value="analytics">
             <AnalyticsDashboard />

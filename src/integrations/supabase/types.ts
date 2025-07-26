@@ -321,6 +321,85 @@ export type Database = {
           },
         ]
       }
+      diving_center_schedules: {
+        Row: {
+          close_time: string | null
+          created_at: string
+          day_of_week: number
+          diving_center_id: string
+          id: string
+          is_closed: boolean
+          open_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          close_time?: string | null
+          created_at?: string
+          day_of_week: number
+          diving_center_id: string
+          id?: string
+          is_closed?: boolean
+          open_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          close_time?: string | null
+          created_at?: string
+          day_of_week?: number
+          diving_center_id?: string
+          id?: string
+          is_closed?: boolean
+          open_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_diving_center_schedule"
+            columns: ["diving_center_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      diving_center_specialties: {
+        Row: {
+          active: boolean
+          certification_agency: string
+          created_at: string
+          diving_center_id: string
+          id: string
+          specialty_name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          certification_agency: string
+          created_at?: string
+          diving_center_id: string
+          id?: string
+          specialty_name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          certification_agency?: string
+          created_at?: string
+          diving_center_id?: string
+          id?: string
+          specialty_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_diving_center"
+            columns: ["diving_center_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       equipment_inventory: {
         Row: {
           brand: string | null
@@ -682,46 +761,76 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          business_license: string | null
+          business_name: string | null
           certification_agency: string | null
           certification_level: string | null
+          city: string | null
+          country: string | null
           created_at: string
+          description: string | null
           email: string
           experience_years: number | null
           first_name: string | null
           id: string
           last_name: string | null
+          max_students_per_instructor: number | null
+          operating_hours: Json | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          services_offered: string[] | null
           updated_at: string
           user_id: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
+          business_license?: string | null
+          business_name?: string | null
           certification_agency?: string | null
           certification_level?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          description?: string | null
           email: string
           experience_years?: number | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          max_students_per_instructor?: number | null
+          operating_hours?: Json | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          services_offered?: string[] | null
           updated_at?: string
           user_id: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
+          business_license?: string | null
+          business_name?: string | null
           certification_agency?: string | null
           certification_level?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          description?: string | null
           email?: string
           experience_years?: number | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          max_students_per_instructor?: number | null
+          operating_hours?: Json | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          services_offered?: string[] | null
           updated_at?: string
           user_id?: string
+          website?: string | null
         }
         Relationships: []
       }

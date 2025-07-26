@@ -16,7 +16,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("student");
+  const [role, setRole] = useState<'student' | 'instructor' | 'diving_center'>('student');
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -256,13 +256,14 @@ export default function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Rol</Label>
-                  <Select value={role} onValueChange={setRole} disabled={loading}>
+                  <Select value={role} onValueChange={(value: 'student' | 'instructor' | 'diving_center') => setRole(value)} disabled={loading}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona tu rol" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="student">Estudiante</SelectItem>
                       <SelectItem value="instructor">Instructor</SelectItem>
+                      <SelectItem value="diving_center">Centro de Buceo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
