@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { StudentReportGenerator } from "@/components/StudentReportGenerator";
+import { AIProgressAnalysis } from "@/components/AIProgressAnalysis";
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
@@ -185,7 +186,15 @@ export const StudentDashboard = () => {
       </div>
 
       {/* Student Report Generator */}
-      <StudentReportGenerator />
+          <StudentReportGenerator />
+          
+          {/* AI Progress Analysis - Only show if student has enrollments */}
+          {enrollments.length > 0 && (
+            <AIProgressAnalysis 
+              studentId={user?.id || ''} 
+              courseId={enrollments[0].course_id} 
+            />
+          )}
     </div>
   );
 };

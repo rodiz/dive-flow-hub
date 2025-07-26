@@ -94,17 +94,40 @@ export const StudentReportGenerator = () => {
   // Generate report mutation
   const generateReportMutation = useMutation({
     mutationFn: async (enrollmentId: string) => {
-      const { data, error } = await supabase.functions.invoke('generate-student-report', {
+      // First generate the basic report
+      const { data: reportData, error: reportError } = await supabase.functions.invoke('generate-student-report', {
         body: { enrollmentId }
       });
 
-      if (error) throw error;
-      return data;
+      if (reportError) throw reportError;
+
+      // Then get AI analysis for the course
+      const enrollment = completedEnrollments?.find(e => e.id === enrollmentId);
+      if (enrollment) {
+        try {
+          const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-progress-analysis', {
+            body: { 
+              courseId: enrollment.course_id,
+              studentId: enrollment.student_id 
+            }
+          });
+
+          if (aiError) {
+            console.warn('AI analysis failed:', aiError);
+            // Continue without AI analysis
+          }
+        } catch (aiError) {
+          console.warn('AI analysis failed:', aiError);
+          // Continue without AI analysis
+        }
+      }
+
+      return reportData;
     },
     onSuccess: () => {
       toast({
         title: "Reporte generado",
-        description: "Tu reporte de curso ha sido generado exitosamente.",
+        description: "Tu reporte de curso ha sido generado exitosamente con análisis personalizado.",
       });
       queryClient.invalidateQueries({ queryKey: ['course-reports'] });
       queryClient.invalidateQueries({ queryKey: ['completed-enrollments'] });
