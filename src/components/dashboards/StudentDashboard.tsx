@@ -5,6 +5,7 @@ import { BookOpen, Calendar, Award, MapPin, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { StudentReportGenerator } from "@/components/StudentReportGenerator";
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
@@ -182,6 +183,9 @@ export const StudentDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Student Report Generator */}
+      <StudentReportGenerator />
     </div>
   );
 };

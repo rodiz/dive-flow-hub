@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_completion_reports: {
+        Row: {
+          certificate_url: string | null
+          course_id: string
+          created_at: string
+          enrollment_id: string
+          generated_at: string
+          id: string
+          instructor_id: string
+          max_depth_achieved: number | null
+          multimedia_urls: Json | null
+          qr_code_url: string | null
+          report_data: Json
+          skills_assessment: Json | null
+          student_id: string
+          total_bottom_time: number | null
+          total_dives: number | null
+          updated_at: string
+        }
+        Insert: {
+          certificate_url?: string | null
+          course_id: string
+          created_at?: string
+          enrollment_id: string
+          generated_at?: string
+          id?: string
+          instructor_id: string
+          max_depth_achieved?: number | null
+          multimedia_urls?: Json | null
+          qr_code_url?: string | null
+          report_data?: Json
+          skills_assessment?: Json | null
+          student_id: string
+          total_bottom_time?: number | null
+          total_dives?: number | null
+          updated_at?: string
+        }
+        Update: {
+          certificate_url?: string | null
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string
+          generated_at?: string
+          id?: string
+          instructor_id?: string
+          max_depth_achieved?: number | null
+          multimedia_urls?: Json | null
+          qr_code_url?: string | null
+          report_data?: Json
+          skills_assessment?: Json | null
+          student_id?: string
+          total_bottom_time?: number | null
+          total_dives?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_enrollments: {
         Row: {
           certification_issued: boolean | null
@@ -26,6 +83,10 @@ export type Database = {
           final_score: number | null
           id: string
           instructor_id: string
+          progress_percentage: number | null
+          report_generated: boolean | null
+          report_sent_at: string | null
+          skills_completed: Json | null
           start_date: string
           student_id: string
           updated_at: string
@@ -41,6 +102,10 @@ export type Database = {
           final_score?: number | null
           id?: string
           instructor_id: string
+          progress_percentage?: number | null
+          report_generated?: boolean | null
+          report_sent_at?: string | null
+          skills_completed?: Json | null
           start_date: string
           student_id: string
           updated_at?: string
@@ -56,6 +121,10 @@ export type Database = {
           final_score?: number | null
           id?: string
           instructor_id?: string
+          progress_percentage?: number | null
+          report_generated?: boolean | null
+          report_sent_at?: string | null
+          skills_completed?: Json | null
           start_date?: string
           student_id?: string
           updated_at?: string
@@ -831,6 +900,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      report_templates: {
+        Row: {
+          certification_agency: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          certification_agency: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          certification_agency?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          template_data?: Json
+          updated_at?: string
         }
         Relationships: []
       }

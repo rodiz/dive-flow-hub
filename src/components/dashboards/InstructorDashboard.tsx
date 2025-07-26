@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { InstructorReportManager } from "@/components/InstructorReportManager";
 
 export const InstructorDashboard = () => {
   const { user } = useAuth();
@@ -198,6 +199,9 @@ export const InstructorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Instructor Report Manager */}
+      <InstructorReportManager />
     </div>
   );
 };
