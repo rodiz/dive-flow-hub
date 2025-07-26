@@ -79,17 +79,29 @@ export default function Inmersiones() {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // First get the student IDs from instructor_students
+      const { data: studentRelations, error: relationsError } = await supabase
         .from('instructor_students')
-        .select(`
-          student_id,
-          profiles!instructor_students_student_id_fkey(first_name, last_name, user_id)
-        `)
+        .select('student_id')
         .eq('instructor_id', user.id)
         .eq('status', 'active');
 
-      if (error) throw error;
-      setStudents(data?.map(relation => relation.profiles).filter(Boolean) || []);
+      if (relationsError) throw relationsError;
+
+      if (studentRelations && studentRelations.length > 0) {
+        const studentIds = studentRelations.map(rel => rel.student_id).filter(Boolean);
+        
+        // Then get the profiles for those student IDs
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, user_id')
+          .in('user_id', studentIds);
+
+        if (profilesError) throw profilesError;
+        setStudents(profiles || []);
+      } else {
+        setStudents([]);
+      }
     } catch (error) {
       console.error('Error fetching students:', error);
     }
