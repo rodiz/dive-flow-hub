@@ -24,6 +24,15 @@ export default function ProtectedRoute({
     );
   }
 
+  // Handle routes that don't require authentication
+  if (!requireAuth) {
+    // If user is authenticated and on landing/auth pages, redirect to dashboard
+    if (user && userProfile && (location.pathname === '/' || location.pathname === '/auth')) {
+      return <Navigate to="/dashboard" replace />;
+    }
+    return <>{children}</>;
+  }
+
   // If authentication is required but user is not logged in
   if (requireAuth && !user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
