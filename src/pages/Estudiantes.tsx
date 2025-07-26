@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
+  const [students, setStudents] = useState<any[]>([]);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
-  const [allStudents, setAllStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEnrollment, setEditingEnrollment] = useState<any>(null);
@@ -27,51 +27,12 @@ export default function Estudiantes() {
   });
 
   useEffect(() => {
+    fetchStudents();
     fetchEnrollments();
     fetchCourses();
-    fetchAllStudents();
   }, [user]);
 
-  const fetchEnrollments = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('course_enrollments')
-        .select(`
-          *,
-          courses(name, code, certification_agency),
-          profiles!course_enrollments_student_id_fkey(first_name, last_name, email, certification_level)
-        `)
-        .eq('instructor_id', user.id)
-        .order('start_date', { ascending: false });
-
-      if (error) throw error;
-      setEnrollments(data || []);
-    } catch (error) {
-      console.error('Error fetching enrollments:', error);
-      toast.error("Error al cargar estudiantes");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-
-      if (error) throw error;
-      setCourses(data || []);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-    }
-  };
-
-  const fetchAllStudents = async () => {
+  const fetchStudents = async () => {
     if (!user) return;
     
     try {
@@ -95,12 +56,52 @@ export default function Estudiantes() {
           .order('first_name');
 
         if (profilesError) throw profilesError;
-        setAllStudents(profiles || []);
+        setStudents(profiles || []);
       } else {
-        setAllStudents([]);
+        setStudents([]);
       }
     } catch (error) {
       console.error('Error fetching students:', error);
+      toast.error("Error al cargar estudiantes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEnrollments = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .select(`
+          *,
+          courses(name, code, certification_agency),
+          profiles!course_enrollments_student_id_fkey(first_name, last_name, email, certification_level)
+        `)
+        .eq('instructor_id', user.id)
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+      setEnrollments(data || []);
+    } catch (error) {
+      console.error('Error fetching enrollments:', error);
+    }
+  };
+
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
     }
   };
 
@@ -209,13 +210,13 @@ export default function Estudiantes() {
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar estudiante" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {allStudents.map((student) => (
-                        <SelectItem key={student.user_id} value={student.user_id}>
-                          {student.first_name} {student.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                     <SelectContent>
+                       {students.map((student) => (
+                         <SelectItem key={student.user_id} value={student.user_id}>
+                           {student.first_name} {student.last_name}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
                   </Select>
                 </div>
                 
@@ -269,95 +270,54 @@ export default function Estudiantes() {
         </div>
 
         <div className="grid gap-6">
-          {enrollments.length === 0 ? (
+          {students.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">No hay estudiantes inscritos</p>
+                <p className="text-muted-foreground">No hay estudiantes registrados</p>
               </CardContent>
             </Card>
           ) : (
-            enrollments.map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow">
+            students.map((student) => (
+              <Card key={student.user_id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-5 w-5" />
-                        {enrollment.profiles?.first_name} {enrollment.profiles?.last_name}
+                        {student.first_name} {student.last_name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Mail className="h-3 w-3" />
-                        {enrollment.profiles?.email}
+                        {student.email}
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Badge 
-                        variant={
-                          enrollment.enrollment_status === 'completed' ? 'default' : 
-                          enrollment.enrollment_status === 'active' ? 'secondary' : 'destructive'
-                        }
-                      >
-                        {enrollment.enrollment_status === 'active' ? 'Activo' : 
-                         enrollment.enrollment_status === 'completed' ? 'Completado' : 'Suspendido'}
+                      <Badge variant="secondary">
+                        Activo
                       </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(enrollment)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">{enrollment.courses?.name}</p>
-                        <p className="text-xs text-muted-foreground">{enrollment.courses?.code}</p>
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center gap-2">
                       <Award className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm">
-                          {enrollment.profiles?.certification_level || 'Sin certificación'}
+                          {student.certification_level || 'Sin certificación'}
                         </p>
                         <p className="text-xs text-muted-foreground">Nivel actual</p>
                       </div>
                     </div>
                     <div>
                       <p className="text-sm">
-                        Inicio: {new Date(enrollment.start_date).toLocaleDateString()}
+                        Rol: {student.role === 'student' ? 'Estudiante' : student.role}
                       </p>
-                      {enrollment.completion_date && (
-                        <p className="text-xs text-muted-foreground">
-                          Completado: {new Date(enrollment.completion_date).toLocaleDateString()}
-                        </p>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {student.city ? `${student.city}, ${student.country}` : student.country}
+                      </p>
                     </div>
                   </div>
-                  
-                  {enrollment.enrollment_status === 'active' && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateEnrollmentStatus(enrollment.id, 'completed')}
-                      >
-                        Marcar como Completado
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateEnrollmentStatus(enrollment.id, 'suspended')}
-                      >
-                        Suspender
-                      </Button>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             ))

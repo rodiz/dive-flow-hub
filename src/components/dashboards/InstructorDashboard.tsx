@@ -74,7 +74,7 @@ export const InstructorDashboard = () => {
     return diveDate.getMonth() === currentMonth && diveDate.getFullYear() === currentYear;
   });
 
-  const uniqueStudents = new Set(dives.map(d => d.student_id)).size;
+  const uniqueStudents = enrollments.length;
   const uniqueSites = new Set(dives.map(d => d.dive_site_id)).size;
   const avgDepth = dives.length > 0 ? Math.round(dives.reduce((sum, d) => sum + (d.depth_achieved || 0), 0) / dives.length) : 0;
 
