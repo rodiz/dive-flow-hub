@@ -16,6 +16,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [role, setRole] = useState<'student' | 'instructor' | 'diving_center'>('student');
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -84,8 +85,9 @@ export default function AuthPage() {
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            first_name: firstName,
-            last_name: lastName,
+            first_name: role === 'diving_center' ? businessName : firstName,
+            last_name: role === 'diving_center' ? '' : lastName,
+            business_name: role === 'diving_center' ? businessName : undefined,
             role: role,
             phone: phone,
           }
@@ -206,31 +208,45 @@ export default function AuthPage() {
             </TabsContent>
             
             <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
+               <form onSubmit={handleSignup} className="space-y-4">
+                {role === 'diving_center' ? (
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">Nombre</Label>
+                    <Label htmlFor="businessName">Nombre del Centro de Buceo</Label>
                     <Input
-                      id="firstName"
-                      placeholder="Juan"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
+                      id="businessName"
+                      placeholder="Ej: MAR Diving and Rescue"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
                       required
                       disabled={loading}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Apellido</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Pérez"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                      disabled={loading}
-                    />
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Nombre</Label>
+                      <Input
+                        id="firstName"
+                        placeholder="Juan"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Apellido</Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Pérez"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="signupEmail">Email</Label>
                   <Input
