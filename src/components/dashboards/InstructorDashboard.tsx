@@ -166,14 +166,13 @@ export const InstructorDashboard = () => {
                   <div key={studentRel.id} className="flex items-center justify-between border-b pb-2">
                     <div>
                       <p className="font-medium">
-                        {studentRel.profile?.first_name && studentRel.profile?.last_name 
-                          ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
-                          : studentRel.student_email}
+                        {studentRel.student_name || 
+                         (studentRel.profile?.first_name && studentRel.profile?.last_name 
+                           ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
+                           : studentRel.student_email)}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {studentRel.profile?.first_name && studentRel.profile?.last_name 
-                          ? (studentRel.profile?.email || studentRel.student_email)
-                          : 'Pendiente de registro'}
+                        {studentRel.student_email}
                       </p>
                     </div>
                     <Badge variant="secondary">
