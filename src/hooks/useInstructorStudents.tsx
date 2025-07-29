@@ -19,6 +19,7 @@ export interface InstructorStudent {
   instructor_id: string;
   student_id: string;
   student_email: string;
+  student_name?: string;
   status: string;
   invited_at: string;
   notes?: string;
@@ -36,7 +37,7 @@ export const useInstructorStudents = () => {
       // Get instructor-student relationships
       const { data: instructorStudents, error: relationsError } = await supabase
         .from('instructor_students')
-        .select('*')
+        .select('*, student_name')
         .eq('instructor_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });

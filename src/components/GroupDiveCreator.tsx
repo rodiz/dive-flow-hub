@@ -18,6 +18,14 @@ interface DiveStudent {
   student_name: string;
   depth_achieved: number;
   bottom_time: number;
+  weight_used?: number;
+  gas_mix?: string;
+  wetsuit_type?: string;
+  wetsuit_thickness?: number;
+  tank_pressure_start?: number;
+  tank_pressure_end?: number;
+  visibility?: number;
+  water_temperature?: number;
   notes?: string;
   photos?: string[];
   videos?: string[];
@@ -64,11 +72,20 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
         ...prev,
         students: [...prev.students, {
           student_id: student.student_id,
-          student_name: student.profile?.first_name && student.profile?.last_name 
-            ? `${student.profile.first_name} ${student.profile.last_name}`
-            : student.student_email,
+          student_name: student.student_name || 
+            (student.profile?.first_name && student.profile?.last_name 
+              ? `${student.profile.first_name} ${student.profile.last_name}`
+              : student.student_email),
           depth_achieved: 10,
           bottom_time: 30,
+          weight_used: 0,
+          gas_mix: 'Air',
+          wetsuit_type: '',
+          wetsuit_thickness: 3,
+          tank_pressure_start: 200,
+          tank_pressure_end: 50,
+          visibility: 10,
+          water_temperature: 25,
           notes: '',
           photos: [],
           videos: []
@@ -113,6 +130,14 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
           dive_type: groupDive.dive_type as "training" | "fun" | "certification" | "specialty",
           depth_achieved: student.depth_achieved,
           bottom_time: student.bottom_time,
+          weight_used: student.weight_used || null,
+          gas_mix: student.gas_mix || 'Air',
+          wetsuit_type: student.wetsuit_type || null,
+          wetsuit_thickness: student.wetsuit_thickness || null,
+          tank_pressure_start: student.tank_pressure_start || null,
+          tank_pressure_end: student.tank_pressure_end || null,
+          visibility: student.visibility || null,
+          water_temperature: student.water_temperature || null,
           notes: [groupDive.general_notes, student.notes].filter(Boolean).join('\n---\n'),
           photos: student.photos || [],
           videos: student.videos || []
@@ -254,9 +279,10 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
                   onCheckedChange={(checked) => handleStudentToggle(student, checked as boolean)}
                 />
                 <Label htmlFor={student.student_id} className="text-sm cursor-pointer">
-                  {student.profile?.first_name && student.profile?.last_name 
+                  {student.student_name || 
+                   (student.profile?.first_name && student.profile?.last_name 
                     ? `${student.profile.first_name} ${student.profile.last_name}`
-                    : student.student_email}
+                    : student.student_email)}
                 </Label>
               </div>
             ))}
@@ -282,7 +308,7 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
                     <Badge variant="outline">ID: {student.student_id.slice(-6)}</Badge>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <Label>Profundidad (m)</Label>
                       <Input
@@ -304,8 +330,92 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
                         placeholder="30"
                       />
                     </div>
+
+                    <div>
+                      <Label>Lastre (kg)</Label>
+                      <Input
+                        type="number"
+                        value={student.weight_used || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'weight_used', parseInt(e.target.value) || 0)}
+                        min="0"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Mezcla de gas</Label>
+                      <Input
+                        value={student.gas_mix || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'gas_mix', e.target.value)}
+                        placeholder="Air, Nitrox 32%..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Tipo de traje</Label>
+                      <Input
+                        value={student.wetsuit_type || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'wetsuit_type', e.target.value)}
+                        placeholder="Neopreno, Seco..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Grosor traje (mm)</Label>
+                      <Input
+                        type="number"
+                        value={student.wetsuit_thickness || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'wetsuit_thickness', parseInt(e.target.value) || 0)}
+                        min="0"
+                        placeholder="3"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Presión inicial (bar)</Label>
+                      <Input
+                        type="number"
+                        value={student.tank_pressure_start || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'tank_pressure_start', parseInt(e.target.value) || 0)}
+                        min="0"
+                        placeholder="200"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Presión final (bar)</Label>
+                      <Input
+                        type="number"
+                        value={student.tank_pressure_end || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'tank_pressure_end', parseInt(e.target.value) || 0)}
+                        min="0"
+                        placeholder="50"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Visibilidad (m)</Label>
+                      <Input
+                        type="number"
+                        value={student.visibility || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'visibility', parseInt(e.target.value) || 0)}
+                        min="0"
+                        placeholder="10"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Temperatura agua (°C)</Label>
+                      <Input
+                        type="number"
+                        value={student.water_temperature || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'water_temperature', parseInt(e.target.value) || 0)}
+                        min="0"
+                        placeholder="25"
+                      />
+                    </div>
                     
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-4">
                       <Label>Notas individuales</Label>
                       <Textarea
                         value={student.notes || ''}

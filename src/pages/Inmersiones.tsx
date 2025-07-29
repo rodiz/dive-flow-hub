@@ -165,147 +165,31 @@ export default function Inmersiones() {
               Gestiona las inmersiones de tus estudiantes
             </p>
           </div>
-          
-          <div className="flex gap-2">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Inmersión Individual
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingDive ? 'Editar Inmersión' : 'Nueva Inmersión'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="student_id">Estudiante</Label>
-                    <Select value={formData.student_id} onValueChange={(value) => setFormData(prev => ({ ...prev, student_id: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar estudiante" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {instructorStudents.filter(s => s.student_id).map((studentRel) => (
-                          <SelectItem key={studentRel.student_id} value={studentRel.student_id!}>
-                            {studentRel.profile?.first_name && studentRel.profile?.last_name 
-                              ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
-                              : studentRel.student_email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="dive_site_id">Sitio de Buceo</Label>
-                    <Select value={formData.dive_site_id} onValueChange={(value) => setFormData(prev => ({ ...prev, dive_site_id: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar sitio" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {diveSites.map((site) => (
-                          <SelectItem key={site.id} value={site.id}>
-                            {site.name} - {site.location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="dive_date">Fecha</Label>
-                    <Input
-                      id="dive_date"
-                      type="date"
-                      value={formData.dive_date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, dive_date: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="dive_time">Hora</Label>
-                    <Input
-                      id="dive_time"
-                      type="time"
-                      value={formData.dive_time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, dive_time: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="depth_achieved">Profundidad (m)</Label>
-                    <Input
-                      id="depth_achieved"
-                      type="number"
-                      value={formData.depth_achieved}
-                      onChange={(e) => setFormData(prev => ({ ...prev, depth_achieved: e.target.value }))}
-                      min="1"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="bottom_time">Tiempo de fondo (min)</Label>
-                    <Input
-                      id="bottom_time"
-                      type="number"
-                      value={formData.bottom_time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, bottom_time: e.target.value }))}
-                      min="1"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="dive_type">Tipo</Label>
-                    <Select value={formData.dive_type} onValueChange={(value) => setFormData(prev => ({ ...prev, dive_type: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="training">Entrenamiento</SelectItem>
-                        <SelectItem value="certification">Certificación</SelectItem>
-                        <SelectItem value="fun">Recreativo</SelectItem>
-                        <SelectItem value="specialty">Especialidad</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="notes">Notas</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Observaciones sobre la inmersión..."
-                  />
-                </div>
-                
-                <Button type="submit" className="w-full">
-                  {editingDive ? 'Actualizar' : 'Crear'} Inmersión
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-          </div>
         </div>
 
-        {/* Sección única de inmersiones con GroupDiveCreator integrado */}
+        {/* Tabs para separar crear inmersión y ver registradas */}
         <div className="space-y-6">
-          <GroupDiveCreator 
-            diveSites={diveSites}
-            onSuccess={fetchDives}
-          />
+          <div className="bg-background rounded-lg border">
+            <div className="flex border-b">
+              <button 
+                className="px-6 py-3 text-sm font-medium border-b-2 border-primary text-primary"
+              >
+                Crear Inmersión
+              </button>
+              <button 
+                className="px-6 py-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => {}}
+              >
+                Inmersiones Registradas
+              </button>
+            </div>
+            <div className="p-6">
+              <GroupDiveCreator 
+                diveSites={diveSites}
+                onSuccess={fetchDives}
+              />
+            </div>
+          </div>
           
           {/* Lista de inmersiones existentes */}
           <Card>
