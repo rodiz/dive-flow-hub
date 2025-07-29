@@ -188,44 +188,59 @@ export const StudentManagement = () => {
             <p className="text-sm">Usa el botón "Agregar Estudiante" para comenzar.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-4">
             {instructorStudents.map((student) => (
-              <div key={student.id} className="border rounded-lg p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">
-                        {student.student_name || 
-                         (student.profile?.first_name && student.profile?.last_name 
-                           ? `${student.profile.first_name} ${student.profile.last_name}`
-                           : student.student_email)}
-                      </h3>
-                      <Badge variant="default">Activo</Badge>
+              <div key={student.id} className="bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+                      <Users className="h-6 w-6 text-white" />
                     </div>
                     
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <span>✉️</span> {student.student_email}
-                    </p>
-                    
-                    {student.profile?.phone && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {student.profile.phone}
-                      </p>
-                    )}
-                    
-                    {student.profile?.city && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {student.profile.city}
-                      </p>
-                    )}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {student.student_name || 
+                           (student.profile?.first_name && student.profile?.last_name 
+                             ? `${student.profile.first_name} ${student.profile.last_name}`
+                             : student.student_email)}
+                        </h3>
+                        <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                          ✓ Activo
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <span>✉️</span> {student.student_email}
+                        </span>
+                        
+                        {student.profile?.phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {student.profile.phone}
+                          </span>
+                        )}
+                        
+                        {student.profile?.city && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {student.profile.city}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="text-right text-sm text-muted-foreground">
-                    Agregado
-                    <br />
-                    <span className="text-xs">
-                      {new Date(student.invited_at).toLocaleDateString()}
-                    </span>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">
+                      Agregado el
+                    </div>
+                    <div className="text-sm font-medium">
+                      {new Date(student.invited_at).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -100,6 +100,7 @@ serve(async (req) => {
           instructor_id: instructorId,
           student_id: authData.id,
           student_email: email.trim(),
+          student_name: `${firstName.trim()} ${lastName.trim()}`,
           status: 'active'
         });
 
