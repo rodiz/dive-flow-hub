@@ -149,38 +149,28 @@ export const InstructorDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Estudiantes Activos */}
+        {/* Escuelas de Buceo */}
         <Card>
           <CardHeader>
-            <CardTitle>Estudiantes Activos</CardTitle>
-            <CardDescription>Estudiantes en cursos activos</CardDescription>
+            <CardTitle>Escuelas de Buceo</CardTitle>
+            <CardDescription>Centros de buceo donde estás afiliado</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {instructorStudents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No tienes estudiantes activos
-                </p>
-              ) : (
-                instructorStudents.slice(0, 5).map((studentRel) => (
-                  <div key={studentRel.id} className="flex items-center justify-between border-b pb-2">
-                    <div>
-                      <p className="font-medium">
-                        {studentRel.student_name || 
-                         (studentRel.profile?.first_name && studentRel.profile?.last_name 
-                           ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
-                           : studentRel.student_email)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {studentRel.student_email}
-                      </p>
-                    </div>
-                    <Badge variant="secondary">
-                      Activo
-                    </Badge>
-                  </div>
-                ))
-              )}
+              <div className="flex items-center justify-between border-b pb-2">
+                <div>
+                  <p className="font-medium">MAR Diving and Rescue</p>
+                  <p className="text-sm text-muted-foreground">
+                    Cartagena, Colombia
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Centro especializado en formación y rescate submarino
+                  </p>
+                </div>
+                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                  Afiliado
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
