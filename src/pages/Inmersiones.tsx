@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Edit, MapPin, Calendar, Clock, Users } from "lucide-react";
+import { Plus, Edit, MapPin, Calendar, Clock, Users, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
+import { GroupDiveCreator } from "@/components/GroupDiveCreator";
 
 export default function Inmersiones() {
   const { user, userProfile } = useAuth();
@@ -82,10 +84,17 @@ export default function Inmersiones() {
     e.preventDefault();
     if (!user) return;
 
+    // Validate required fields
+    if (!formData.student_id || !formData.dive_site_id || !formData.dive_date || !formData.depth_achieved || !formData.bottom_time) {
+      toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
     try {
       const diveData = {
         ...formData,
         instructor_id: user.id,
+        student_id: formData.student_id || null, // Ensure proper UUID format
         depth_achieved: parseInt(formData.depth_achieved),
         bottom_time: parseInt(formData.bottom_time),
         dive_type: formData.dive_type as "training" | "fun" | "certification" | "specialty"
@@ -157,13 +166,14 @@ export default function Inmersiones() {
             </p>
           </div>
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-ocean">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Inmersión
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Inmersión Individual
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
@@ -179,9 +189,11 @@ export default function Inmersiones() {
                         <SelectValue placeholder="Seleccionar estudiante" />
                       </SelectTrigger>
                       <SelectContent>
-                        {instructorStudents.map((studentRel) => (
-                          <SelectItem key={studentRel.student_id} value={studentRel.student_id || ""}>
-                            {studentRel.profile?.first_name} {studentRel.profile?.last_name}
+                        {instructorStudents.filter(s => s.student_id).map((studentRel) => (
+                          <SelectItem key={studentRel.student_id} value={studentRel.student_id!}>
+                            {studentRel.profile?.first_name && studentRel.profile?.last_name 
+                              ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
+                              : studentRel.student_email}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -285,17 +297,28 @@ export default function Inmersiones() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
-        <div className="grid gap-6">
-          {dives.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">No hay inmersiones registradas</p>
-              </CardContent>
-            </Card>
-          ) : (
-            dives.map((dive) => (
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="list">Ver Inmersiones</TabsTrigger>
+            <TabsTrigger value="group">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Inmersión Grupal
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="space-y-6">
+            <div className="grid gap-6">
+              {dives.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">No hay inmersiones registradas</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                dives.map((dive) => (
               <Card key={dive.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -351,9 +374,18 @@ export default function Inmersiones() {
                   )}
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="group" className="space-y-6">
+            <GroupDiveCreator 
+              diveSites={diveSites}
+              onSuccess={fetchDives}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

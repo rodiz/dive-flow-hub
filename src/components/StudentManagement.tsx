@@ -195,7 +195,9 @@ export const StudentManagement = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">
-                        {student.profile?.first_name} {student.profile?.last_name}
+                        {student.profile?.first_name && student.profile?.last_name 
+                          ? `${student.profile.first_name} ${student.profile.last_name}`
+                          : student.student_email}
                       </h3>
                       <Badge variant="default">Activo</Badge>
                     </div>

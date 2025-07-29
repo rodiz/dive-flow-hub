@@ -177,9 +177,11 @@ export default function Estudiantes() {
                       <SelectValue placeholder="Seleccionar estudiante" />
                     </SelectTrigger>
                      <SelectContent>
-                       {instructorStudents.map((studentRel) => (
-                         <SelectItem key={studentRel.student_id} value={studentRel.student_id || ""}>
-                           {studentRel.profile?.first_name} {studentRel.profile?.last_name}
+                       {instructorStudents.filter(s => s.student_id).map((studentRel) => (
+                         <SelectItem key={studentRel.student_id} value={studentRel.student_id!}>
+                           {studentRel.profile?.first_name && studentRel.profile?.last_name 
+                             ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
+                             : studentRel.student_email}
                          </SelectItem>
                        ))}
                      </SelectContent>
@@ -250,7 +252,9 @@ export default function Estudiantes() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-5 w-5" />
-                        {studentRel.profile?.first_name} {studentRel.profile?.last_name}
+                        {studentRel.profile?.first_name && studentRel.profile?.last_name 
+                          ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
+                          : studentRel.student_email}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Mail className="h-3 w-3" />
