@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Edit, MapPin, Calendar, Clock, Users, UserPlus } from "lucide-react";
+import { Plus, Edit, MapPin, Calendar, Clock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { GroupDiveCreator } from "@/components/GroupDiveCreator";
 
@@ -300,92 +300,87 @@ export default function Inmersiones() {
           </div>
         </div>
 
-        <Tabs defaultValue="list" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="list">Ver Inmersiones</TabsTrigger>
-            <TabsTrigger value="group">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Inmersión Grupal
-            </TabsTrigger>
-          </TabsList>
+        {/* Sección única de inmersiones con GroupDiveCreator integrado */}
+        <div className="space-y-6">
+          <GroupDiveCreator 
+            diveSites={diveSites}
+            onSuccess={fetchDives}
+          />
           
-          <TabsContent value="list" className="space-y-6">
-            <div className="grid gap-6">
-              {dives.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">No hay inmersiones registradas</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                dives.map((dive) => (
-              <Card key={dive.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5" />
-                        {dive.dive_sites?.name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {dive.dive_sites?.location}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant={dive.dive_type === 'certification' ? 'default' : 'secondary'}>
-                        {dive.dive_type === 'training' ? 'Entrenamiento' : 
-                         dive.dive_type === 'certification' ? 'Certificación' : 'Recreativo'}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(dive)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {dive.profiles?.first_name} {dive.profiles?.last_name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {new Date(dive.dive_date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {dive.bottom_time} min / {dive.depth_achieved}m
-                      </span>
-                    </div>
-                  </div>
-                  {dive.notes && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {dive.notes}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="group" className="space-y-6">
-            <GroupDiveCreator 
-              diveSites={diveSites}
-              onSuccess={fetchDives}
-            />
-          </TabsContent>
-        </Tabs>
+          {/* Lista de inmersiones existentes */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Inmersiones Registradas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {dives.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No hay inmersiones registradas</p>
+                ) : (
+                  dives.map((dive) => (
+                    <Card key={dive.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="flex items-center gap-2">
+                              <MapPin className="h-5 w-5" />
+                              {dive.dive_sites?.name}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              {dive.dive_sites?.location}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge variant={dive.dive_type === 'certification' ? 'default' : 'secondary'}>
+                              {dive.dive_type === 'training' ? 'Entrenamiento' : 
+                               dive.dive_type === 'certification' ? 'Certificación' : 'Recreativo'}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(dive)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {dive.profiles?.first_name && dive.profiles?.last_name 
+                                ? `${dive.profiles.first_name} ${dive.profiles.last_name}`
+                                : 'Estudiante sin nombre'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {new Date(dive.dive_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {dive.bottom_time} min / {dive.depth_achieved}m
+                            </span>
+                          </div>
+                        </div>
+                        {dive.notes && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {dive.notes}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

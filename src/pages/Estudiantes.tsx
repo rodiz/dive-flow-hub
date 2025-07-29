@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Edit, User, Mail, Award, GraduationCap } from "lucide-react";
+import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
@@ -287,6 +287,49 @@ export default function Estudiantes() {
                         {studentRel.profile?.city ? `${studentRel.profile.city}, ${studentRel.profile.country}` : studentRel.profile?.country}
                       </p>
                     </div>
+                  </div>
+                  
+                  {/* Información adicional del estudiante */}
+                  {studentRel.profile && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Teléfono</p>
+                          <p className="text-sm">{studentRel.profile.phone || 'No registrado'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Agencia de certificación</p>
+                          <p className="text-sm">{studentRel.profile.certification_agency || 'No especificada'}</p>
+                        </div>
+                      </div>
+                      
+                      {studentRel.notes && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Notas del instructor</p>
+                          <p className="text-sm">{studentRel.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Botones de acción */}
+                  <div className="flex gap-2 mt-4 pt-4 border-t">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Detalles
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button variant="default" size="sm" className="bg-gradient-ocean">
+                      <Send className="h-4 w-4 mr-2" />
+                      Enviar Reporte
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      WhatsApp
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

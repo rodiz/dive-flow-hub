@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Users, MapPin, Calendar, Clock, Trash2, Save } from "lucide-react";
+import { Plus, Users, MapPin, Calendar, Clock, Trash2, Save, Image, Video } from "lucide-react";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 interface DiveStudent {
@@ -19,6 +19,8 @@ interface DiveStudent {
   depth_achieved: number;
   bottom_time: number;
   notes?: string;
+  photos?: string[];
+  videos?: string[];
 }
 
 interface GroupDiveData {
@@ -67,7 +69,9 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
             : student.student_email,
           depth_achieved: 10,
           bottom_time: 30,
-          notes: ''
+          notes: '',
+          photos: [],
+          videos: []
         }]
       }));
     } else {
@@ -109,7 +113,9 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
           dive_type: groupDive.dive_type as "training" | "fun" | "certification" | "specialty",
           depth_achieved: student.depth_achieved,
           bottom_time: student.bottom_time,
-          notes: [groupDive.general_notes, student.notes].filter(Boolean).join('\n---\n')
+          notes: [groupDive.general_notes, student.notes].filter(Boolean).join('\n---\n'),
+          photos: student.photos || [],
+          videos: student.videos || []
         };
 
         return supabase.from('dives').insert(diveData);
@@ -299,12 +305,42 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
                       />
                     </div>
                     
-                    <div>
+                    <div className="md:col-span-3">
                       <Label>Notas individuales</Label>
-                      <Input
+                      <Textarea
                         value={student.notes || ''}
                         onChange={(e) => updateStudentData(student.student_id, 'notes', e.target.value)}
                         placeholder="Observaciones específicas..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Sección de multimedia */}
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <Image className="h-4 w-4" />
+                        Fotos (URLs separadas por comas)
+                      </Label>
+                      <Textarea
+                        value={student.photos?.join(', ') || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'photos', e.target.value.split(',').map(url => url.trim()).filter(Boolean))}
+                        placeholder="https://ejemplo.com/foto1.jpg, https://ejemplo.com/foto2.jpg"
+                        rows={2}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <Video className="h-4 w-4" />
+                        Videos (URLs separadas por comas)
+                      </Label>
+                      <Textarea
+                        value={student.videos?.join(', ') || ''}
+                        onChange={(e) => updateStudentData(student.student_id, 'videos', e.target.value.split(',').map(url => url.trim()).filter(Boolean))}
+                        placeholder="https://ejemplo.com/video1.mp4, https://ejemplo.com/video2.mp4"
+                        rows={2}
                       />
                     </div>
                   </div>
