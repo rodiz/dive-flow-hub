@@ -51,7 +51,7 @@ export default function Inmersiones() {
         .select(`
           *,
           dive_sites(name, location),
-          profiles!dives_student_id_fkey(first_name, last_name)
+          profiles!student_id(first_name, last_name)
         `)
         .eq('instructor_id', user.id)
         .order('dive_date', { ascending: false });
@@ -263,6 +263,133 @@ export default function Inmersiones() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingDive ? 'Editar Inmersión' : 'Nueva Inmersión'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="student_id">Estudiante</Label>
+                  <Select
+                    value={formData.student_id}
+                    onValueChange={(value) => setFormData({ ...formData, student_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar estudiante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {instructorStudents.map((student) => (
+                        <SelectItem key={student.student_id} value={student.student_id}>
+                          {student.profile.first_name} {student.profile.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="dive_site_id">Sitio de Buceo</Label>
+                  <Select
+                    value={formData.dive_site_id}
+                    onValueChange={(value) => setFormData({ ...formData, dive_site_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar sitio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {diveSites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name} - {site.location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dive_date">Fecha</Label>
+                  <Input
+                    type="date"
+                    value={formData.dive_date}
+                    onChange={(e) => setFormData({ ...formData, dive_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dive_time">Hora</Label>
+                  <Input
+                    type="time"
+                    value={formData.dive_time}
+                    onChange={(e) => setFormData({ ...formData, dive_time: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="depth_achieved">Profundidad (m)</Label>
+                  <Input
+                    type="number"
+                    value={formData.depth_achieved}
+                    onChange={(e) => setFormData({ ...formData, depth_achieved: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bottom_time">Tiempo de Fondo (min)</Label>
+                  <Input
+                    type="number"
+                    value={formData.bottom_time}
+                    onChange={(e) => setFormData({ ...formData, bottom_time: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dive_type">Tipo de Inmersión</Label>
+                  <Select
+                    value={formData.dive_type}
+                    onValueChange={(value) => setFormData({ ...formData, dive_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="training">Entrenamiento</SelectItem>
+                      <SelectItem value="certification">Certificación</SelectItem>
+                      <SelectItem value="fun">Recreativo</SelectItem>
+                      <SelectItem value="specialty">Especialidad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Notas</Label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Notas adicionales sobre la inmersión..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  {editingDive ? 'Actualizar' : 'Crear'} Inmersión
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
