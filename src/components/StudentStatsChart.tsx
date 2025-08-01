@@ -25,9 +25,9 @@ export const StudentStatsChart = ({ students }: StudentStatsChartProps) => {
       const studentIds = students.map(s => s.student_id).filter(Boolean);
       if (!studentIds.length) return [];
 
-      // Get dive counts
+      // Get dive counts from participants table
       const { data: diveStats } = await supabase
-        .from('dives')
+        .from('dive_participants')
         .select('student_id')
         .in('student_id', studentIds);
 

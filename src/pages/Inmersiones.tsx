@@ -3,39 +3,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Edit, MapPin, Calendar, Clock, Users } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { GroupDiveCreator } from "@/components/GroupDiveCreator";
+import { DiveParticipantDetails } from "@/components/DiveParticipantDetails";
 
 export default function Inmersiones() {
   const { user, userProfile } = useAuth();
   const [dives, setDives] = useState<any[]>([]);
   const [diveSites, setDiveSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Use the unified students hook
-  const { data: instructorStudents = [] } = useInstructorStudents();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingDive, setEditingDive] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    student_id: '',
-    dive_site_id: '',
-    dive_date: '',
-    dive_time: '',
-    depth_achieved: '',
-    bottom_time: '',
-    dive_type: 'training',
-    notes: ''
-  });
+  const [selectedDive, setSelectedDive] = useState<any>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
 
   useEffect(() => {
     fetchDives();
@@ -51,13 +34,23 @@ export default function Inmersiones() {
         .select(`
           *,
           dive_sites(name, location),
-          student_profile:profiles!student_id(first_name, last_name, user_id)
+          dive_participants(
+            id,
+            student_id,
+            depth_achieved,
+            bottom_time,
+            equipment_check,
+            medical_check,
+            individual_notes,
+            performance_rating,
+            profiles!student_id(first_name, last_name)
+          )
         `)
         .eq('instructor_id', user.id)
         .order('dive_date', { ascending: false });
 
       if (error) throw error;
-      console.log('Dives data:', data); // Debug log
+      console.log('Dives data:', data);
       setDives(data || []);
     } catch (error) {
       console.error('Error fetching dives:', error);
@@ -81,78 +74,6 @@ export default function Inmersiones() {
     }
   };
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    // Validate required fields
-    if (!formData.student_id || !formData.dive_site_id || !formData.dive_date || !formData.depth_achieved || !formData.bottom_time) {
-      toast.error("Por favor completa todos los campos obligatorios");
-      return;
-    }
-
-    try {
-      const diveData = {
-        ...formData,
-        instructor_id: user.id,
-        student_id: formData.student_id || null, // Ensure proper UUID format
-        depth_achieved: parseInt(formData.depth_achieved),
-        bottom_time: parseInt(formData.bottom_time),
-        dive_type: formData.dive_type as "training" | "fun" | "certification" | "specialty"
-      };
-
-      if (editingDive) {
-        const { error } = await supabase
-          .from('dives')
-          .update(diveData)
-          .eq('id', editingDive.id);
-
-        if (error) throw error;
-        toast.success("Inmersión actualizada exitosamente");
-      } else {
-        const { error } = await supabase
-          .from('dives')
-          .insert(diveData);
-
-        if (error) throw error;
-        toast.success("Inmersión creada exitosamente");
-      }
-
-      setDialogOpen(false);
-      setEditingDive(null);
-      setFormData({
-        student_id: '',
-        dive_site_id: '',
-        dive_date: '',
-        dive_time: '',
-        depth_achieved: '',
-        bottom_time: '',
-        dive_type: 'training',
-        notes: ''
-      });
-      await fetchDives(); // Refresh the dives list
-    } catch (error) {
-      console.error('Error saving dive:', error);
-      toast.error("Error al guardar inmersión");
-    }
-  };
-
-  const openEditDialog = (dive: any) => {
-    setEditingDive(dive);
-    setFormData({
-      student_id: dive.student_id,
-      dive_site_id: dive.dive_site_id,
-      dive_date: dive.dive_date,
-      dive_time: dive.dive_time || '',
-      depth_achieved: dive.depth_achieved.toString(),
-      bottom_time: dive.bottom_time.toString(),
-      dive_type: dive.dive_type,
-      notes: dive.notes || ''
-    });
-    setDialogOpen(true);
-  };
-
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Cargando...</div>;
   }
@@ -164,27 +85,31 @@ export default function Inmersiones() {
           <div>
             <h1 className="text-4xl font-bold text-primary mb-2">Inmersiones</h1>
             <p className="text-xl text-muted-foreground">
-              Gestiona las inmersiones de tus estudiantes
+              Gestiona las inmersiones grupales de tus estudiantes
             </p>
           </div>
         </div>
 
         <Tabs defaultValue="create" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="create">Crear Inmersión</TabsTrigger>
+            <TabsTrigger value="create">Crear Inmersión Grupal</TabsTrigger>
             <TabsTrigger value="registered">Inmersiones Registradas</TabsTrigger>
           </TabsList>
           
           <TabsContent value="create" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Nueva Inmersión</CardTitle>
+                <CardTitle>Nueva Inmersión Grupal</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Crea una inmersión y selecciona múltiples estudiantes para participar
+                </p>
               </CardHeader>
               <CardContent>
                 <GroupDiveCreator 
                   diveSites={diveSites}
                   onSuccess={() => {
-                    fetchDives(); // Refresh dives when new one is created
+                    fetchDives();
+                    toast.success("Inmersión grupal creada exitosamente");
                   }}
                 />
               </CardContent>
@@ -217,45 +142,85 @@ export default function Inmersiones() {
                             <div className="flex gap-2">
                               <Badge variant={dive.dive_type === 'certification' ? 'default' : 'secondary'}>
                                 {dive.dive_type === 'training' ? 'Entrenamiento' : 
-                                 dive.dive_type === 'certification' ? 'Certificación' : 'Recreativo'}
+                                 dive.dive_type === 'certification' ? 'Certificación' : 
+                                 dive.dive_type === 'fun' ? 'Recreativo' : 'Especialidad'}
                               </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditDialog(dive)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                {dive.student_profile?.first_name && dive.student_profile?.last_name 
-                                  ? `${dive.student_profile.first_name} ${dive.student_profile.last_name}`
-                                  : 'Estudiante sin perfil'}
-                              </span>
+                              <Users className="h-5 w-5 text-muted-foreground" />
+                              <div>
+                                <span className="text-sm font-medium">
+                                  {dive.actual_participants || dive.dive_participants?.length || 0} Participantes
+                                </span>
+                                <div className="text-xs text-muted-foreground">
+                                  {dive.dive_participants?.slice(0, 2).map((p: any) => 
+                                    p.profiles?.first_name && p.profiles?.last_name 
+                                      ? `${p.profiles.first_name} ${p.profiles.last_name}`
+                                      : 'Sin nombre'
+                                  ).join(', ')}
+                                  {dive.dive_participants && dive.dive_participants.length > 2 && 
+                                    ` y ${dive.dive_participants.length - 2} más`
+                                  }
+                                </div>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                {new Date(dive.dive_date).toLocaleDateString()}
-                              </span>
+                              <div>
+                                <span className="text-sm font-medium">Fecha</span>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(dive.dive_date).toLocaleDateString()}
+                                  {dive.dive_time && ` • ${dive.dive_time}`}
+                                </div>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                {dive.bottom_time} min / {dive.depth_achieved}m
-                              </span>
+                              <div>
+                                <span className="text-sm font-medium">Detalles</span>
+                                <div className="text-xs text-muted-foreground">
+                                  {dive.depth_achieved}m • {dive.bottom_time} min
+                                </div>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Participants List */}
+                          {dive.dive_participants && dive.dive_participants.length > 0 && (
+                            <div className="mt-4">
+                              <h4 className="text-sm font-medium mb-2">Participantes:</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {dive.dive_participants.map((participant: any) => (
+                                  <div key={participant.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                                    <span className="text-sm">
+                                      {participant.profiles?.first_name && participant.profiles?.last_name 
+                                        ? `${participant.profiles.first_name} ${participant.profiles.last_name}`
+                                        : 'Participante sin nombre'}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setSelectedParticipant(participant)}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      Ver
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {dive.notes && (
-                            <p className="text-sm text-muted-foreground mt-2">
-                              {dive.notes}
-                            </p>
+                            <div className="mt-4 p-3 bg-muted rounded-md">
+                              <p className="text-sm">
+                                <strong>Notas de la inmersión:</strong> {dive.notes}
+                              </p>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
@@ -267,134 +232,15 @@ export default function Inmersiones() {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingDive ? 'Editar Inmersión' : 'Nueva Inmersión'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="student_id">Estudiante</Label>
-                  <Select
-                    value={formData.student_id}
-                    onValueChange={(value) => setFormData({ ...formData, student_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar estudiante" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instructorStudents.map((student) => (
-                        <SelectItem key={student.student_id} value={student.student_id}>
-                          {student.profile?.first_name && student.profile?.last_name
-                            ? `${student.profile.first_name} ${student.profile.last_name}`
-                            : student.student_name || 'Estudiante sin nombre'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="dive_site_id">Sitio de Buceo</Label>
-                  <Select
-                    value={formData.dive_site_id}
-                    onValueChange={(value) => setFormData({ ...formData, dive_site_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar sitio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {diveSites.map((site) => (
-                        <SelectItem key={site.id} value={site.id}>
-                          {site.name} - {site.location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dive_date">Fecha</Label>
-                  <Input
-                    type="date"
-                    value={formData.dive_date}
-                    onChange={(e) => setFormData({ ...formData, dive_date: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dive_time">Hora</Label>
-                  <Input
-                    type="time"
-                    value={formData.dive_time}
-                    onChange={(e) => setFormData({ ...formData, dive_time: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="depth_achieved">Profundidad (m)</Label>
-                  <Input
-                    type="number"
-                    value={formData.depth_achieved}
-                    onChange={(e) => setFormData({ ...formData, depth_achieved: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bottom_time">Tiempo de Fondo (min)</Label>
-                  <Input
-                    type="number"
-                    value={formData.bottom_time}
-                    onChange={(e) => setFormData({ ...formData, bottom_time: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dive_type">Tipo de Inmersión</Label>
-                  <Select
-                    value={formData.dive_type}
-                    onValueChange={(value) => setFormData({ ...formData, dive_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="training">Entrenamiento</SelectItem>
-                      <SelectItem value="certification">Certificación</SelectItem>
-                      <SelectItem value="fun">Recreativo</SelectItem>
-                      <SelectItem value="specialty">Especialidad</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notas</Label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Notas adicionales sobre la inmersión..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingDive ? 'Actualizar' : 'Crear'} Inmersión
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {/* Participant Details Dialog */}
+        {selectedParticipant && (
+          <DiveParticipantDetails
+            participant={selectedParticipant}
+            isOpen={!!selectedParticipant}
+            onClose={() => setSelectedParticipant(null)}
+            onUpdate={fetchDives}
+          />
+        )}
       </div>
     </div>
   );

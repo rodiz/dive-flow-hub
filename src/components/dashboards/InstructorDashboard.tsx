@@ -135,7 +135,7 @@ export const InstructorDashboard = () => {
                     <div>
                       <p className="font-medium">{dive.dive_sites?.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {dive.profiles?.first_name} {dive.profiles?.last_name}
+                        {dive.actual_participants || 0} participantes
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(dive.dive_date).toLocaleDateString()} • {dive.depth_achieved}m

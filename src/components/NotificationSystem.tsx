@@ -81,32 +81,41 @@ export default function NotificationSystem() {
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      // Verificar inmersiones próximas
-      const { data: upcomingDives } = await supabase
-        .from('dives')
-        .select('*')
-        .eq('student_id', user.id)
-        .gte('dive_date', now.toISOString().split('T')[0])
-        .lte('dive_date', tomorrow.toISOString().split('T')[0]);
+      // Verificar inmersiones próximas del estudiante
+      const { data: participations } = await supabase
+        .from('dive_participants')
+        .select('dive_id')
+        .eq('student_id', user.id);
 
-      if (upcomingDives && upcomingDives.length > 0) {
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          title: 'Inmersión Próxima',
-          message: `Tienes ${upcomingDives.length} inmersión(es) programada(s) para las próximas 24 horas`,
-          type: 'reminder',
-          read: false,
-          created_at: new Date().toISOString(),
-          action_url: '/inmersiones'
-        };
+      const diveIds = participations?.map(p => p.dive_id) || [];
+      
+      if (diveIds.length > 0) {
+        const { data: upcomingDives } = await supabase
+          .from('dives')
+          .select('*')
+          .in('id', diveIds)
+          .gte('dive_date', now.toISOString().split('T')[0])
+          .lte('dive_date', tomorrow.toISOString().split('T')[0]);
 
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        toast({
-          title: "Nueva Notificación",
-          description: newNotification.message,
-        });
+        if (upcomingDives && upcomingDives.length > 0) {
+          const newNotification: Notification = {
+            id: Date.now().toString(),
+            title: 'Inmersión Próxima',
+            message: `Tienes ${upcomingDives.length} inmersión(es) programada(s) para las próximas 24 horas`,
+            type: 'reminder',
+            read: false,
+            created_at: new Date().toISOString(),
+            action_url: '/inmersiones'
+          };
+
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          toast({
+            title: "Nueva Notificación",
+            description: newNotification.message,
+          });
+        }
       }
     } catch (error) {
       console.error('Error checking notifications:', error);

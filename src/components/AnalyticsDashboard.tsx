@@ -160,12 +160,12 @@ export function AnalyticsDashboard() {
 
   const fetchInstructorStats = async () => {
     // Total students taught by this instructor
-    const { data: studentIds } = await supabase
-      .from('dives')
+    const { data: participantData } = await supabase
+      .from('dive_participants')
       .select('student_id')
       .eq('instructor_id', user!.id);
 
-    const uniqueStudents = new Set(studentIds?.map(d => d.student_id)).size;
+    const uniqueStudents = new Set(participantData?.map(d => d.student_id)).size;
 
     // Total dives conducted
     const { count: totalDives } = await supabase
@@ -214,7 +214,7 @@ export function AnalyticsDashboard() {
   const fetchStudentStats = async () => {
     // Student's personal stats
     const { count: totalDives } = await supabase
-      .from('dives')
+      .from('dive_participants')
       .select('*', { count: 'exact', head: true })
       .eq('student_id', user!.id);
 
@@ -231,13 +231,13 @@ export function AnalyticsDashboard() {
       .eq('certification_issued', true);
 
     // Average dive depth for student
-    const { data: diveDepths } = await supabase
-      .from('dives')
+    const { data: participantDepths } = await supabase
+      .from('dive_participants')
       .select('depth_achieved')
       .eq('student_id', user!.id);
 
-    const avgDiveDepth = diveDepths?.length 
-      ? diveDepths.reduce((sum, dive) => sum + dive.depth_achieved, 0) / diveDepths.length
+    const avgDiveDepth = participantDepths?.length 
+      ? participantDepths.filter(p => p.depth_achieved).reduce((sum, p) => sum + p.depth_achieved!, 0) / participantDepths.filter(p => p.depth_achieved).length
       : 0;
 
     setStats({
@@ -307,14 +307,26 @@ export function AnalyticsDashboard() {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    const { data: monthlyDives } = await supabase
-      .from('dives')
-      .select('dive_date')
-      .eq('student_id', user!.id)
-      .gte('dive_date', sixMonthsAgo.toISOString().split('T')[0]);
+    // Get dive IDs the student participated in
+    const { data: participations } = await supabase
+      .from('dive_participants')
+      .select('dive_id')
+      .eq('student_id', user!.id);
 
-    const divesData = generateMonthlyData(monthlyDives?.map(d => d.dive_date) || []);
-    setDivesChart(divesData);
+    const diveIds = participations?.map(p => p.dive_id) || [];
+
+    if (diveIds.length > 0) {
+      const { data: studentDives } = await supabase
+        .from('dives')
+        .select('dive_date')
+        .in('id', diveIds)
+        .gte('dive_date', sixMonthsAgo.toISOString().split('T')[0]);
+
+      const divesData = generateMonthlyData(studentDives?.map(d => d.dive_date) || []);
+      setDivesChart(divesData);
+    } else {
+      setDivesChart([]);
+    }
 
     setCoursesChart([]);
   };

@@ -211,6 +211,54 @@ export type Database = {
         }
         Relationships: []
       }
+      dive_participants: {
+        Row: {
+          bottom_time: number | null
+          created_at: string
+          depth_achieved: number | null
+          dive_id: string
+          equipment_check: boolean | null
+          id: string
+          individual_notes: string | null
+          instructor_id: string
+          medical_check: boolean | null
+          performance_rating: number | null
+          skills_completed: Json | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          bottom_time?: number | null
+          created_at?: string
+          depth_achieved?: number | null
+          dive_id: string
+          equipment_check?: boolean | null
+          id?: string
+          individual_notes?: string | null
+          instructor_id: string
+          medical_check?: boolean | null
+          performance_rating?: number | null
+          skills_completed?: Json | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          bottom_time?: number | null
+          created_at?: string
+          depth_achieved?: number | null
+          dive_id?: string
+          equipment_check?: boolean | null
+          id?: string
+          individual_notes?: string | null
+          instructor_id?: string
+          medical_check?: boolean | null
+          performance_rating?: number | null
+          skills_completed?: Json | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dive_sites: {
         Row: {
           created_at: string
@@ -252,6 +300,7 @@ export type Database = {
       }
       dives: {
         Row: {
+          actual_participants: number | null
           bottom_time: number
           certification_level:
             | Database["public"]["Enums"]["dive_certification"]
@@ -270,11 +319,11 @@ export type Database = {
           gas_mix: string | null
           id: string
           instructor_id: string
+          max_participants: number | null
           medical_check: boolean | null
           notes: string | null
           photos: string[] | null
           sea_conditions: string | null
-          student_id: string
           surface_interval: number | null
           tank_pressure_end: number | null
           tank_pressure_start: number | null
@@ -288,6 +337,7 @@ export type Database = {
           wetsuit_type: string | null
         }
         Insert: {
+          actual_participants?: number | null
           bottom_time: number
           certification_level?:
             | Database["public"]["Enums"]["dive_certification"]
@@ -306,11 +356,11 @@ export type Database = {
           gas_mix?: string | null
           id?: string
           instructor_id: string
+          max_participants?: number | null
           medical_check?: boolean | null
           notes?: string | null
           photos?: string[] | null
           sea_conditions?: string | null
-          student_id: string
           surface_interval?: number | null
           tank_pressure_end?: number | null
           tank_pressure_start?: number | null
@@ -324,6 +374,7 @@ export type Database = {
           wetsuit_type?: string | null
         }
         Update: {
+          actual_participants?: number | null
           bottom_time?: number
           certification_level?:
             | Database["public"]["Enums"]["dive_certification"]
@@ -342,11 +393,11 @@ export type Database = {
           gas_mix?: string | null
           id?: string
           instructor_id?: string
+          max_participants?: number | null
           medical_check?: boolean | null
           notes?: string | null
           photos?: string[] | null
           sea_conditions?: string | null
-          student_id?: string
           surface_interval?: number | null
           tank_pressure_end?: number | null
           tank_pressure_start?: number | null
@@ -377,13 +428,6 @@ export type Database = {
           {
             foreignKeyName: "dives_instructor_id_fkey"
             columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "dives_student_id_fkey"
-            columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
