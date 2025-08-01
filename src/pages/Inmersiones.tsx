@@ -64,6 +64,8 @@ export default function Inmersiones() {
           .filter(Boolean)
       ));
 
+      console.log('Student IDs found:', allStudentIds);
+
       // If no students, return dives as-is
       if (allStudentIds.length === 0) {
         setDives(divesData);
@@ -76,18 +78,27 @@ export default function Inmersiones() {
         .select('user_id, first_name, last_name')
         .in('user_id', allStudentIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('Profiles found:', profiles);
 
       // Combine the data
       const divesWithProfiles = divesData.map(dive => ({
         ...dive,
-        dive_participants: dive.dive_participants?.map(participant => ({
-          ...participant,
-          profiles: profiles?.find(p => p.user_id === participant.student_id) || null
-        }))
+        dive_participants: dive.dive_participants?.map(participant => {
+          const profile = profiles?.find(p => p.user_id === participant.student_id);
+          console.log(`Participant ${participant.student_id} matched with profile:`, profile);
+          return {
+            ...participant,
+            profiles: profile || null
+          };
+        })
       }));
 
-      console.log('Dives data with profiles:', divesWithProfiles);
+      console.log('Final dives with profiles:', divesWithProfiles);
       setDives(divesWithProfiles);
     } catch (error) {
       console.error('Error fetching dives:', error);
