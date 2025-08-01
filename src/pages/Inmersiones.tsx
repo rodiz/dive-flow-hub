@@ -43,7 +43,7 @@ export default function Inmersiones() {
             medical_check,
             individual_notes,
             performance_rating,
-            profiles!student_id(first_name, last_name)
+            student_profile:profiles!student_id(first_name, last_name)
           )
         `)
         .eq('instructor_id', user.id)
@@ -158,8 +158,8 @@ export default function Inmersiones() {
                                 </span>
                                 <div className="text-xs text-muted-foreground">
                                   {dive.dive_participants?.slice(0, 2).map((p: any) => 
-                                    p.profiles?.first_name && p.profiles?.last_name 
-                                      ? `${p.profiles.first_name} ${p.profiles.last_name}`
+                                    p.student_profile?.first_name && p.student_profile?.last_name 
+                                      ? `${p.student_profile.first_name} ${p.student_profile.last_name}`
                                       : 'Sin nombre'
                                   ).join(', ')}
                                   {dive.dive_participants && dive.dive_participants.length > 2 && 
@@ -197,8 +197,8 @@ export default function Inmersiones() {
                                 {dive.dive_participants.map((participant: any) => (
                                   <div key={participant.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
                                     <span className="text-sm">
-                                      {participant.profiles?.first_name && participant.profiles?.last_name 
-                                        ? `${participant.profiles.first_name} ${participant.profiles.last_name}`
+                                      {participant.student_profile?.first_name && participant.student_profile?.last_name 
+                                        ? `${participant.student_profile.first_name} ${participant.student_profile.last_name}`
                                         : 'Participante sin nombre'}
                                     </span>
                                     <Button
