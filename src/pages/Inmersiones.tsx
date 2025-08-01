@@ -43,7 +43,19 @@ export default function Inmersiones() {
             equipment_check,
             medical_check,
             individual_notes,
-            performance_rating
+            performance_rating,
+            oxygen_amount,
+            ballast_weight,
+            images,
+            videos,
+            tank_pressure_start,
+            tank_pressure_end,
+            wetsuit_thickness,
+            gas_mix,
+            visibility_conditions,
+            water_temperature,
+            current_strength,
+            safety_stop_time
           )
         `)
         .eq('instructor_id', user.id)
