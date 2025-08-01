@@ -15,6 +15,19 @@ export const StudentDashboard = () => {
   const { data: dives = [] } = useQuery({
     queryKey: ["student-dives", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Get dive participations for this student
+      const { data: participations, error: partError } = await supabase
+        .from("dive_participants")
+        .select("dive_id")
+        .eq("student_id", user.id);
+
+      if (partError) throw partError;
+      if (!participations?.length) return [];
+
+      const diveIds = participations.map(p => p.dive_id);
+
       const { data, error } = await supabase
         .from("dives")
         .select(`
@@ -22,7 +35,7 @@ export const StudentDashboard = () => {
           dive_sites!inner(name, location),
           profiles!instructor_id(first_name, last_name)
         `)
-        .eq("student_id", user?.id)
+        .in("id", diveIds)
         .order("dive_date", { ascending: false })
         .limit(5);
       
