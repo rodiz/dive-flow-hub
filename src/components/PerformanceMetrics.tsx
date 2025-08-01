@@ -59,20 +59,29 @@ export default function PerformanceMetrics() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Obtener datos reales de inmersiones
-      const { data: dives } = await supabase
-        .from('dives')
-        .select('*')
+      // Obtener datos reales de inmersiones del estudiante
+      const { data: participations } = await supabase
+        .from('dive_participants')
+        .select(`
+          depth_achieved,
+          bottom_time,
+          dive_id,
+          dives!inner(
+            depth_achieved,
+            bottom_time,
+            dive_date
+          )
+        `)
         .eq('student_id', user.id);
 
-      // Calcular métricas
-      const totalDives = dives?.length || 0;
-      const totalBottomTime = dives?.reduce((sum, dive) => sum + dive.bottom_time, 0) || 0;
-      const averageDepth = dives?.length 
-        ? dives.reduce((sum, dive) => sum + dive.depth_achieved, 0) / dives.length 
+      // Calcular métricas basadas en las participaciones
+      const totalDives = participations?.length || 0;
+      const totalBottomTime = participations?.reduce((sum, participation) => sum + (participation.bottom_time || 0), 0) || 0;
+      const averageDepth = participations?.length 
+        ? participations.reduce((sum, participation) => sum + (participation.depth_achieved || 0), 0) / participations.length 
         : 0;
-      const maxDepth = dives?.length 
-        ? Math.max(...dives.map(dive => dive.depth_achieved))
+      const maxDepth = participations?.length 
+        ? Math.max(...participations.map(participation => participation.depth_achieved || 0))
         : 0;
 
       // Simular datos adicionales de rendimiento
@@ -89,7 +98,7 @@ export default function PerformanceMetrics() {
           safety: Math.min(100, (totalDives / 8) * 100),
           equipment: Math.min(100, (totalDives / 12) * 100),
         },
-        monthlyProgress: generateMonthlyProgress(dives || []),
+        monthlyProgress: generateMonthlyProgress(participations || []),
         recentAchievements: [
           {
             id: '1',
