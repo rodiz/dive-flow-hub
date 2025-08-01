@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,7 @@ export function DiveParticipantDetails({
   onUpdate 
 }: DiveParticipantDetailsProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [localParticipant, setLocalParticipant] = useState(participant);
   const [formData, setFormData] = useState({
     depth_achieved: participant.depth_achieved?.toString() || '',
     bottom_time: participant.bottom_time?.toString() || '',
@@ -72,6 +73,11 @@ export function DiveParticipantDetails({
     current_strength: participant.current_strength?.toString() || '',
     safety_stop_time: participant.safety_stop_time?.toString() || ''
   });
+
+  // Actualizar datos locales cuando cambie el prop participant
+  useEffect(() => {
+    setLocalParticipant(participant);
+  }, [participant]);
 
   const handleSave = async () => {
     try {
@@ -101,6 +107,30 @@ export function DiveParticipantDetails({
 
       if (error) throw error;
 
+      // Actualizar el estado local con los nuevos datos
+      const updatedParticipant = {
+        ...localParticipant,
+        depth_achieved: formData.depth_achieved ? parseInt(formData.depth_achieved) : null,
+        bottom_time: formData.bottom_time ? parseInt(formData.bottom_time) : null,
+        equipment_check: formData.equipment_check,
+        medical_check: formData.medical_check,
+        individual_notes: formData.individual_notes,
+        performance_rating: parseInt(formData.performance_rating),
+        oxygen_amount: formData.oxygen_amount ? parseInt(formData.oxygen_amount) : null,
+        ballast_weight: formData.ballast_weight ? parseInt(formData.ballast_weight) : null,
+        images: formData.images ? formData.images.split(',').map(url => url.trim()).filter(Boolean) : null,
+        videos: formData.videos ? formData.videos.split(',').map(url => url.trim()).filter(Boolean) : null,
+        tank_pressure_start: formData.tank_pressure_start ? parseInt(formData.tank_pressure_start) : null,
+        tank_pressure_end: formData.tank_pressure_end ? parseInt(formData.tank_pressure_end) : null,
+        wetsuit_thickness: formData.wetsuit_thickness ? parseInt(formData.wetsuit_thickness) : null,
+        gas_mix: formData.gas_mix,
+        visibility_conditions: formData.visibility_conditions ? parseInt(formData.visibility_conditions) : null,
+        water_temperature: formData.water_temperature ? parseInt(formData.water_temperature) : null,
+        current_strength: formData.current_strength ? parseInt(formData.current_strength) : null,
+        safety_stop_time: formData.safety_stop_time ? parseInt(formData.safety_stop_time) : null
+      };
+      
+      setLocalParticipant(updatedParticipant);
       toast.success("Detalles del participante actualizados");
       setIsEditing(false);
       onUpdate();
@@ -144,7 +174,7 @@ export function DiveParticipantDetails({
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold">
-                      {participant.depth_achieved || '-'} m
+                      {localParticipant.depth_achieved || '-'} m
                     </div>
                   </CardContent>
                 </Card>
@@ -155,7 +185,7 @@ export function DiveParticipantDetails({
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold">
-                      {participant.bottom_time || '-'} min
+                      {localParticipant.bottom_time || '-'} min
                     </div>
                   </CardContent>
                 </Card>
@@ -166,7 +196,7 @@ export function DiveParticipantDetails({
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold">
-                      {participant.oxygen_amount || '-'}%
+                      {localParticipant.oxygen_amount || '-'}%
                     </div>
                   </CardContent>
                 </Card>
@@ -179,7 +209,7 @@ export function DiveParticipantDetails({
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold">
-                      {participant.ballast_weight || '-'} kg
+                      {localParticipant.ballast_weight || '-'} kg
                     </div>
                   </CardContent>
                 </Card>
@@ -190,7 +220,7 @@ export function DiveParticipantDetails({
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold">
-                      {participant.tank_pressure_start || '-'} bar
+                      {localParticipant.tank_pressure_start || '-'} bar
                     </div>
                   </CardContent>
                 </Card>
@@ -201,7 +231,7 @@ export function DiveParticipantDetails({
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold">
-                      {participant.tank_pressure_end || '-'} bar
+                      {localParticipant.tank_pressure_end || '-'} bar
                     </div>
                   </CardContent>
                 </Card>
@@ -210,77 +240,77 @@ export function DiveParticipantDetails({
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Grosor Traje:</Label>
-                  <div className="text-sm">{participant.wetsuit_thickness || '-'} mm</div>
+                  <div className="text-sm">{localParticipant.wetsuit_thickness || '-'} mm</div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Mezcla Gas:</Label>
-                  <div className="text-sm">{participant.gas_mix || 'Air'}</div>
+                  <div className="text-sm">{localParticipant.gas_mix || 'Air'}</div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Visibilidad:</Label>
-                  <div className="text-sm">{participant.visibility_conditions || '-'} m</div>
+                  <div className="text-sm">{localParticipant.visibility_conditions || '-'} m</div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Parada Seguridad:</Label>
-                  <div className="text-sm">{participant.safety_stop_time || '-'} min</div>
+                  <div className="text-sm">{localParticipant.safety_stop_time || '-'} min</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Temperatura Agua:</Label>
-                  <div className="text-sm">{participant.water_temperature || '-'}°C</div>
+                  <div className="text-sm">{localParticipant.water_temperature || '-'}°C</div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Fuerza Corriente:</Label>
-                  <div className="text-sm">{participant.current_strength || '-'}/10</div>
+                  <div className="text-sm">{localParticipant.current_strength || '-'}/10</div>
                 </div>
               </div>
 
-              {(participant.images && participant.images.length > 0) && (
+              {(localParticipant.images && localParticipant.images.length > 0) && (
                 <div>
                   <Label className="text-sm font-medium">Imágenes:</Label>
-                  <div className="text-sm text-muted-foreground">{participant.images.length} imagen(es) adjuntada(s)</div>
+                  <div className="text-sm text-muted-foreground">{localParticipant.images.length} imagen(es) adjuntada(s)</div>
                 </div>
               )}
 
-              {(participant.videos && participant.videos.length > 0) && (
+              {(localParticipant.videos && localParticipant.videos.length > 0) && (
                 <div>
                   <Label className="text-sm font-medium">Videos:</Label>
-                  <div className="text-sm text-muted-foreground">{participant.videos.length} video(s) adjuntado(s)</div>
+                  <div className="text-sm text-muted-foreground">{localParticipant.videos.length} video(s) adjuntado(s)</div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Label>Chequeo de Equipo:</Label>
-                  <Badge variant={participant.equipment_check ? "default" : "secondary"}>
-                    {participant.equipment_check ? "Completado" : "Pendiente"}
+                  <Badge variant={localParticipant.equipment_check ? "default" : "secondary"}>
+                    {localParticipant.equipment_check ? "Completado" : "Pendiente"}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
                   <Label>Chequeo Médico:</Label>
-                  <Badge variant={participant.medical_check ? "default" : "secondary"}>
-                    {participant.medical_check ? "Completado" : "Pendiente"}
+                  <Badge variant={localParticipant.medical_check ? "default" : "secondary"}>
+                    {localParticipant.medical_check ? "Completado" : "Pendiente"}
                   </Badge>
                 </div>
               </div>
 
-              {participant.performance_rating && (
+              {localParticipant.performance_rating && (
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   <Label>Evaluación:</Label>
-                  <Badge variant={getPerformanceColor(participant.performance_rating)}>
-                    {getPerformanceText(participant.performance_rating)} ({participant.performance_rating}/5)
+                  <Badge variant={getPerformanceColor(localParticipant.performance_rating)}>
+                    {getPerformanceText(localParticipant.performance_rating)} ({localParticipant.performance_rating}/5)
                   </Badge>
                 </div>
               )}
 
-              {participant.individual_notes && (
+              {localParticipant.individual_notes && (
                 <div>
                   <Label className="text-sm font-medium">Notas Individuales:</Label>
                   <div className="mt-1 p-3 bg-muted rounded-md">
-                    {participant.individual_notes}
+                    {localParticipant.individual_notes}
                   </div>
                 </div>
               )}
