@@ -51,12 +51,13 @@ export default function Inmersiones() {
         .select(`
           *,
           dive_sites(name, location),
-          profiles!student_id(first_name, last_name)
+          student_profile:profiles!student_id(first_name, last_name, id)
         `)
         .eq('instructor_id', user.id)
         .order('dive_date', { ascending: false });
 
       if (error) throw error;
+      console.log('Dives data:', data); // Debug log
       setDives(data || []);
     } catch (error) {
       console.error('Error fetching dives:', error);
@@ -130,7 +131,7 @@ export default function Inmersiones() {
         dive_type: 'training',
         notes: ''
       });
-      fetchDives();
+      await fetchDives(); // Refresh the dives list
     } catch (error) {
       console.error('Error saving dive:', error);
       toast.error("Error al guardar inmersión");
@@ -182,7 +183,9 @@ export default function Inmersiones() {
               <CardContent>
                 <GroupDiveCreator 
                   diveSites={diveSites}
-                  onSuccess={fetchDives}
+                  onSuccess={() => {
+                    fetchDives(); // Refresh dives when new one is created
+                  }}
                 />
               </CardContent>
             </Card>
@@ -231,8 +234,8 @@ export default function Inmersiones() {
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm">
-                                {dive.profiles?.first_name && dive.profiles?.last_name 
-                                  ? `${dive.profiles.first_name} ${dive.profiles.last_name}`
+                                {dive.student_profile?.first_name && dive.student_profile?.last_name 
+                                  ? `${dive.student_profile.first_name} ${dive.student_profile.last_name}`
                                   : 'Estudiante sin perfil'}
                               </span>
                             </div>
