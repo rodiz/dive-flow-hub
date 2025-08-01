@@ -51,7 +51,7 @@ export default function Inmersiones() {
         .select(`
           *,
           dive_sites(name, location),
-          student_profile:profiles!student_id(first_name, last_name, id)
+          student_profile:profiles!student_id(first_name, last_name, user_id)
         `)
         .eq('instructor_id', user.id)
         .order('dive_date', { ascending: false });
