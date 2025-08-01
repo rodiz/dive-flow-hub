@@ -233,7 +233,7 @@ export default function Inmersiones() {
                               <span className="text-sm">
                                 {dive.profiles?.first_name && dive.profiles?.last_name 
                                   ? `${dive.profiles.first_name} ${dive.profiles.last_name}`
-                                  : 'Estudiante sin nombre'}
+                                  : 'Estudiante sin perfil'}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
