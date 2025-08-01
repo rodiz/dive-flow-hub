@@ -10,11 +10,95 @@ import { InstructorReportManager } from "@/components/InstructorReportManager";
 import { StudentManagement } from "@/components/StudentManagement";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
+type DiveParticipantWithProfile = {
+  id: string;
+  student_id: string;
+  depth_achieved: number;
+  bottom_time: number;
+  equipment_check: boolean;
+  medical_check: boolean;
+  individual_notes: string;
+  performance_rating: number;
+  profiles?: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+  } | null;
+};
+
 export const InstructorDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Obtener inmersiones dirigidas por el instructor
+  // Obtener las 3 inmersiones más recientes dirigidas por el instructor
+  const { data: recentDives = [] } = useQuery({
+    queryKey: ["instructor-recent-dives", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // First get dives with participants
+      const { data: divesData, error } = await supabase
+        .from('dives')
+        .select(`
+          *,
+          dive_sites(name, location),
+          dive_participants(
+            id,
+            student_id,
+            depth_achieved,
+            bottom_time,
+            equipment_check,
+            medical_check,
+            individual_notes,
+            performance_rating
+          )
+        `)
+        .eq('instructor_id', user.id)
+        .order('dive_date', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+
+      if (!divesData || divesData.length === 0) {
+        return [];
+      }
+
+      // Get all unique student IDs from all dives
+      const allStudentIds = Array.from(new Set(
+        divesData
+          .flatMap(dive => dive.dive_participants || [])
+          .map(participant => participant.student_id)
+          .filter(Boolean)
+      ));
+
+      // If no students, return dives as-is
+      if (allStudentIds.length === 0) {
+        return divesData;
+      }
+
+      // Get profiles for all students
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', allStudentIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const divesWithProfiles = divesData.map(dive => ({
+        ...dive,
+        dive_participants: dive.dive_participants?.map(participant => ({
+          ...participant,
+          profiles: profiles?.find(p => p.user_id === participant.student_id) || null
+        }))
+      }));
+
+      return divesWithProfiles;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Obtener inmersiones para estadísticas generales
   const { data: dives = [] } = useQuery({
     queryKey: ["instructor-dives", user?.id],
     queryFn: async () => {
@@ -22,12 +106,10 @@ export const InstructorDashboard = () => {
         .from("dives")
         .select(`
           *,
-          dive_sites!inner(name, location),
-          profiles!student_id(first_name, last_name)
+          dive_sites!inner(name, location)
         `)
         .eq("instructor_id", user?.id)
-        .order("dive_date", { ascending: false })
-        .limit(10);
+        .order("dive_date", { ascending: false });
       
       if (error) throw error;
       return data || [];
@@ -125,23 +207,50 @@ export const InstructorDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {dives.length === 0 ? (
+              {recentDives.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No has dirigido inmersiones aún
                 </p>
               ) : (
-                dives.slice(0, 5).map((dive) => (
-                  <div key={dive.id} className="flex items-center justify-between border-b pb-2">
-                    <div>
-                      <p className="font-medium">{dive.dive_sites?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {dive.actual_participants || 0} participantes
+                recentDives.map((dive) => (
+                  <div key={dive.id} className="flex items-start justify-between border-b pb-3 last:border-b-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">{dive.dive_sites?.name}</p>
+                        <Badge variant="secondary">{dive.dive_type === 'training' ? 'Entrenamiento' : 
+                          dive.dive_type === 'certification' ? 'Certificación' : 
+                          dive.dive_type === 'fun' ? 'Recreativo' : 'Especialidad'}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {dive.dive_sites?.location} • {dive.depth_achieved}m • {dive.bottom_time} min
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(dive.dive_date).toLocaleDateString()} • {dive.depth_achieved}m
-                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>{new Date(dive.dive_date).toLocaleDateString()}</span>
+                        {dive.dive_time && <span>• {dive.dive_time}</span>}
+                      </div>
+                      {dive.dive_participants && dive.dive_participants.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Participantes ({dive.dive_participants.length}):
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {dive.dive_participants.slice(0, 3).map((participant: DiveParticipantWithProfile, idx) => (
+                              <Badge key={participant.id} variant="outline" className="text-xs">
+                                {participant.profiles?.first_name && participant.profiles?.last_name 
+                                  ? `${participant.profiles.first_name} ${participant.profiles.last_name}`
+                                  : 'Sin nombre'}
+                              </Badge>
+                            ))}
+                            {dive.dive_participants.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{dive.dive_participants.length - 3} más
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <Badge variant="secondary">{dive.dive_type}</Badge>
                   </div>
                 ))
               )}
