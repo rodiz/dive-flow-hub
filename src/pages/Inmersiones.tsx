@@ -29,7 +29,8 @@ export default function Inmersiones() {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // First get dives with participants
+      const { data: divesData, error } = await supabase
         .from('dives')
         .select(`
           *,
@@ -42,16 +43,52 @@ export default function Inmersiones() {
             equipment_check,
             medical_check,
             individual_notes,
-            performance_rating,
-            profiles!dive_participants_student_id_fkey(first_name, last_name)
+            performance_rating
           )
         `)
         .eq('instructor_id', user.id)
         .order('dive_date', { ascending: false });
 
       if (error) throw error;
-      console.log('Dives data:', data);
-      setDives(data || []);
+
+      if (!divesData || divesData.length === 0) {
+        setDives([]);
+        return;
+      }
+
+      // Get all unique student IDs from all dives
+      const allStudentIds = Array.from(new Set(
+        divesData
+          .flatMap(dive => dive.dive_participants || [])
+          .map(participant => participant.student_id)
+          .filter(Boolean)
+      ));
+
+      // If no students, return dives as-is
+      if (allStudentIds.length === 0) {
+        setDives(divesData);
+        return;
+      }
+
+      // Get profiles for all students
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', allStudentIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const divesWithProfiles = divesData.map(dive => ({
+        ...dive,
+        dive_participants: dive.dive_participants?.map(participant => ({
+          ...participant,
+          profiles: profiles?.find(p => p.user_id === participant.student_id) || null
+        }))
+      }));
+
+      console.log('Dives data with profiles:', divesWithProfiles);
+      setDives(divesWithProfiles);
     } catch (error) {
       console.error('Error fetching dives:', error);
       toast.error("Error al cargar inmersiones");
