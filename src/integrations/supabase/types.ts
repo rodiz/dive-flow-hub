@@ -265,6 +265,13 @@ export type Database = {
             referencedRelation: "dives"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dive_participants_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       dive_sites: {
