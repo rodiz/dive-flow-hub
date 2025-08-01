@@ -286,7 +286,9 @@ export default function Inmersiones() {
                     <SelectContent>
                       {instructorStudents.map((student) => (
                         <SelectItem key={student.student_id} value={student.student_id}>
-                          {student.profile.first_name} {student.profile.last_name}
+                          {student.profile?.first_name && student.profile?.last_name
+                            ? `${student.profile.first_name} ${student.profile.last_name}`
+                            : student.student_name || 'Estudiante sin nombre'}
                         </SelectItem>
                       ))}
                     </SelectContent>
