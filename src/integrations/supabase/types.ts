@@ -213,49 +213,85 @@ export type Database = {
       }
       dive_participants: {
         Row: {
+          ballast_weight: number | null
           bottom_time: number | null
           created_at: string
+          current_strength: number | null
           depth_achieved: number | null
           dive_id: string
           equipment_check: boolean | null
+          gas_mix: string | null
           id: string
+          images: string[] | null
           individual_notes: string | null
           instructor_id: string
           medical_check: boolean | null
+          oxygen_amount: number | null
           performance_rating: number | null
+          safety_stop_time: number | null
           skills_completed: Json | null
           student_id: string
+          tank_pressure_end: number | null
+          tank_pressure_start: number | null
           updated_at: string
+          videos: string[] | null
+          visibility_conditions: number | null
+          water_temperature: number | null
+          wetsuit_thickness: number | null
         }
         Insert: {
+          ballast_weight?: number | null
           bottom_time?: number | null
           created_at?: string
+          current_strength?: number | null
           depth_achieved?: number | null
           dive_id: string
           equipment_check?: boolean | null
+          gas_mix?: string | null
           id?: string
+          images?: string[] | null
           individual_notes?: string | null
           instructor_id: string
           medical_check?: boolean | null
+          oxygen_amount?: number | null
           performance_rating?: number | null
+          safety_stop_time?: number | null
           skills_completed?: Json | null
           student_id: string
+          tank_pressure_end?: number | null
+          tank_pressure_start?: number | null
           updated_at?: string
+          videos?: string[] | null
+          visibility_conditions?: number | null
+          water_temperature?: number | null
+          wetsuit_thickness?: number | null
         }
         Update: {
+          ballast_weight?: number | null
           bottom_time?: number | null
           created_at?: string
+          current_strength?: number | null
           depth_achieved?: number | null
           dive_id?: string
           equipment_check?: boolean | null
+          gas_mix?: string | null
           id?: string
+          images?: string[] | null
           individual_notes?: string | null
           instructor_id?: string
           medical_check?: boolean | null
+          oxygen_amount?: number | null
           performance_rating?: number | null
+          safety_stop_time?: number | null
           skills_completed?: Json | null
           student_id?: string
+          tank_pressure_end?: number | null
+          tank_pressure_start?: number | null
           updated_at?: string
+          videos?: string[] | null
+          visibility_conditions?: number | null
+          water_temperature?: number | null
+          wetsuit_thickness?: number | null
         }
         Relationships: [
           {
