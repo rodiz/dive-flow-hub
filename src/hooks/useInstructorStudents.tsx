@@ -52,7 +52,7 @@ export const useInstructorStudents = () => {
 
         const { data, error: relationsError } = await supabase
           .from('instructor_students')
-          .select('*, student_name')
+          .select('*')
           .in('instructor_id', instructorIds)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
@@ -63,7 +63,7 @@ export const useInstructorStudents = () => {
         // For instructors, get only their students
         const { data, error: relationsError } = await supabase
           .from('instructor_students')
-          .select('*, student_name')
+          .select('*')
           .eq('instructor_id', user.id)
           .eq('status', 'active')
           .order('created_at', { ascending: false });

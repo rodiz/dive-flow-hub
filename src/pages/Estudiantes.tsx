@@ -143,7 +143,7 @@ export default function Estudiantes() {
       if (formData.course_id) {
         try {
           const enrollmentData = {
-            student_id: data.user_id,
+            student_id: data.student.id, // Use student.id from edge function response
             course_id: formData.course_id,
             start_date: formData.start_date,
             enrollment_status: formData.enrollment_status,
@@ -170,7 +170,7 @@ export default function Estudiantes() {
         }
       }
       
-      queryClient.invalidateQueries({ queryKey: ['instructor-students'] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-students', user?.id, userProfile?.role] });
       setDialogOpen(false);
       setEditingEnrollment(null);
       setFormData({
