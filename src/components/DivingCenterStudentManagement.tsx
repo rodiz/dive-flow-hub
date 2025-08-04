@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
+
 import { Plus, Edit, User, Mail, Award, Eye, Send, MessageSquare, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const DivingCenterStudentManagement = () => {
   const { user } = useAuth();
@@ -18,11 +20,16 @@ export const DivingCenterStudentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    student_email: '',
-    student_name: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    city: '',
     instructor_id: '',
     notes: ''
   });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchStudents();
@@ -106,60 +113,96 @@ export const DivingCenterStudentManagement = () => {
       setStudents(studentRelations || []);
     } catch (error) {
       console.error('Error fetching students:', error);
-      toast.error("Error al cargar estudiantes");
+      toast({
+        title: "Error",
+        description: "Error al cargar estudiantes",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    try {
-      // Crear invitación para el estudiante
-      const { data: invitation, error: inviteError } = await supabase
-        .from('instructor_students')
-        .insert({
-          instructor_id: formData.instructor_id,
-          student_email: formData.student_email,
-          student_name: formData.student_name || null,
-          notes: formData.notes || null,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (inviteError) throw inviteError;
-
-      // Llamar edge function para enviar invitación
-      const { error: functionError } = await supabase.functions.invoke('send-student-invitation', {
+  // Create new student mutation
+  const createStudentMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('create-student', {
         body: {
-          email: formData.student_email,
-          instructor_name: user.email, // Esto debería ser el nombre del instructor
-          invitation_id: invitation.id
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim() || null,
+          city: formData.city.trim() || null,
+          instructorId: formData.instructor_id
         }
       });
 
-      if (functionError) {
-        console.error('Error sending invitation:', functionError);
-        toast.error("Estudiante agregado pero no se pudo enviar la invitación");
-      } else {
-        toast.success("Invitación enviada exitosamente");
-      }
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data) => {
+      toast({
+        title: "Estudiante creado",
+        description: "El estudiante ha sido creado exitosamente",
+      });
+      
+      // Crear relación instructor-estudiante si es necesario
+      if (formData.notes) {
+        try {
+          const { error } = await supabase
+            .from('instructor_students')
+            .insert({
+              instructor_id: formData.instructor_id,
+              student_id: data.user_id,
+              student_email: formData.email,
+              student_name: `${formData.firstName} ${formData.lastName}`,
+              notes: formData.notes,
+              status: 'active'
+            });
 
+          if (error) console.error('Error creating instructor-student relation:', error);
+        } catch (error) {
+          console.error('Error creating instructor-student relation:', error);
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['instructor-students'] });
       setDialogOpen(false);
       setFormData({
-        student_email: '',
-        student_name: '',
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        city: '',
         instructor_id: '',
         notes: ''
       });
       fetchStudents();
-    } catch (error) {
-      console.error('Error inviting student:', error);
-      toast.error("Error al invitar estudiante");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Error al crear estudiante",
+        variant: "destructive",
+      });
     }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    // Validar campos obligatorios
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.instructor_id) {
+      toast({
+        title: "Error",
+        description: "Por favor completa nombre, apellido, email y selecciona un instructor",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createStudentMutation.mutate();
   };
 
   if (loading) {
@@ -180,71 +223,108 @@ export const DivingCenterStudentManagement = () => {
           <DialogTrigger asChild>
             <Button className="bg-gradient-ocean">
               <Plus className="h-4 w-4 mr-2" />
-              Invitar Estudiante
+              Crear Nuevo Estudiante
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Invitar Nuevo Estudiante</DialogTitle>
+              <DialogTitle>Crear Nuevo Estudiante</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="instructor_id">Asignar a Instructor</Label>
-                <Select 
-                  value={formData.instructor_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, instructor_id: value }))}
-                  required
+                <div>
+                  <Label htmlFor="instructor_id">Asignar a Instructor</Label>
+                  <Select 
+                    value={formData.instructor_id} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, instructor_id: value }))}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar instructor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {instructors.map((instructor) => (
+                        <SelectItem key={instructor.instructor_id} value={instructor.instructor_id}>
+                          {instructor.profiles?.first_name && instructor.profiles?.last_name 
+                            ? `${instructor.profiles.first_name} ${instructor.profiles.last_name}`
+                            : instructor.profiles?.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">Nombre *</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="Nombre"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Apellido *</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Apellido"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@ejemplo.com"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+57 300 123 4567"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="city">Ciudad</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="Bogotá, Medellín, etc."
+                  />
+                </div>
+              
+                <div>
+                  <Label htmlFor="notes">Notas (opcional)</Label>
+                  <Input
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Notas adicionales sobre el estudiante"
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={createStudentMutation.isPending}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar instructor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {instructors.map((instructor) => (
-                      <SelectItem key={instructor.instructor_id} value={instructor.instructor_id}>
-                        {instructor.profiles?.first_name && instructor.profiles?.last_name 
-                          ? `${instructor.profiles.first_name} ${instructor.profiles.last_name}`
-                          : instructor.profiles?.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="student_email">Email del Estudiante</Label>
-                <Input
-                  id="student_email"
-                  type="email"
-                  value={formData.student_email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, student_email: e.target.value }))}
-                  placeholder="estudiante@ejemplo.com"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="student_name">Nombre del Estudiante (opcional)</Label>
-                <Input
-                  id="student_name"
-                  value={formData.student_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, student_name: e.target.value }))}
-                  placeholder="Juan Pérez"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="notes">Notas (opcional)</Label>
-                <Input
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Notas adicionales sobre el estudiante"
-                />
-              </div>
-              
-              <Button type="submit" className="w-full">
-                Enviar Invitación
-              </Button>
+                  {createStudentMutation.isPending ? 'Creando...' : 'Crear Estudiante'}
+                </Button>
             </form>
           </DialogContent>
         </Dialog>
