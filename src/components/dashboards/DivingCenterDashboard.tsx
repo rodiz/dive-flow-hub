@@ -7,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { InstructorManagementForCenter } from "@/components/InstructorManagementForCenter";
+import { DivingCenterStudentManagement } from "@/components/DivingCenterStudentManagement";
+import { DivingCenterGroupDiveCreator } from "@/components/DivingCenterGroupDiveCreator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const DivingCenterDashboard = () => {
   const { user } = useAuth();
@@ -68,6 +71,20 @@ export const DivingCenterDashboard = () => {
       return data || [];
     },
     enabled: !!user?.id,
+  });
+
+  // Obtener sitios de buceo
+  const { data: diveSites = [] } = useQuery({
+    queryKey: ["dive-sites"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dive_sites')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Estadísticas
@@ -218,8 +235,41 @@ export const DivingCenterDashboard = () => {
         </Card>
       </div>
 
-      {/* Instructor Management Section */}
-      <InstructorManagementForCenter />
+      {/* Management Tabs */}
+      <Tabs defaultValue="instructors" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="instructors">Instructores</TabsTrigger>
+          <TabsTrigger value="students">Estudiantes</TabsTrigger>
+          <TabsTrigger value="dives">Inmersiones</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="instructors" className="space-y-6">
+          <InstructorManagementForCenter />
+        </TabsContent>
+        
+        <TabsContent value="students" className="space-y-6">
+          <DivingCenterStudentManagement />
+        </TabsContent>
+        
+        <TabsContent value="dives" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestión de Inmersiones</CardTitle>
+              <CardDescription>
+                Crea inmersiones asignando instructores y estudiantes del centro
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DivingCenterGroupDiveCreator 
+                diveSites={diveSites}
+                onSuccess={() => {
+                  console.log("Inmersión creada exitosamente");
+                }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
