@@ -64,17 +64,32 @@ export const InstructorManagementForCenter = () => {
         throw new Error("Instructor no encontrado con ese email");
       }
 
-      // Check if already assigned
+      // Check if already assigned (including inactive assignments)
       const { data: existingAssignment } = await supabase
         .from("instructor_assignments")
-        .select("id")
+        .select("id, assignment_status")
         .eq("instructor_id", instructorProfile.user_id)
         .eq("diving_center_id", user?.id)
-        .eq("assignment_status", "active")
-        .single();
+        .maybeSingle();
 
       if (existingAssignment) {
-        throw new Error("El instructor ya está asignado a este centro");
+        if (existingAssignment.assignment_status === "active") {
+          throw new Error("El instructor ya está asignado a este centro");
+        } else {
+          // Reactivate existing assignment instead of creating new one
+          const { data, error } = await supabase
+            .from("instructor_assignments")
+            .update({
+              assignment_status: "active",
+              assigned_at: new Date().toISOString()
+            })
+            .eq("id", existingAssignment.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          return data;
+        }
       }
 
       // Create assignment
