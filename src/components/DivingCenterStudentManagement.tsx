@@ -140,34 +140,12 @@ export const DivingCenterStudentManagement = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: () => {
       toast({
         title: "Estudiante creado",
-        description: "El estudiante ha sido creado exitosamente",
+        description: "El estudiante ha sido creado exitosamente y está listo para inmersiones",
       });
-      
-      // Crear relación instructor-estudiante si es necesario
-      if (formData.notes) {
-        try {
-          const { error } = await supabase
-            .from('instructor_students')
-            .insert({
-              instructor_id: formData.instructor_id,
-              student_id: data.user_id,
-              student_email: formData.email,
-              student_name: `${formData.firstName} ${formData.lastName}`,
-              notes: formData.notes,
-              status: 'active'
-            });
-
-          if (error) console.error('Error creating instructor-student relation:', error);
-        } catch (error) {
-          console.error('Error creating instructor-student relation:', error);
-        }
-      }
-      
       queryClient.invalidateQueries({ queryKey: ['instructor-students'] });
-      setDialogOpen(false);
       setFormData({
         firstName: '',
         lastName: '',
@@ -177,6 +155,7 @@ export const DivingCenterStudentManagement = () => {
         instructor_id: '',
         notes: ''
       });
+      setDialogOpen(false);
       fetchStudents();
     },
     onError: (error: any) => {
@@ -188,20 +167,16 @@ export const DivingCenterStudentManagement = () => {
     }
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
-    // Validar campos obligatorios
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.instructor_id) {
       toast({
         title: "Error",
-        description: "Por favor completa nombre, apellido, email y selecciona un instructor",
+        description: "Por favor completa los campos obligatorios",
         variant: "destructive",
       });
       return;
     }
-
     createStudentMutation.mutate();
   };
 
