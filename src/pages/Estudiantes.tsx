@@ -34,7 +34,7 @@ export default function Estudiantes() {
   });
 
   // Use the unified students hook
-  const { data: instructorStudents = [] } = useInstructorStudents();
+  const { data: instructorStudents = [], refetch: refetchStudents } = useInstructorStudents();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -170,6 +170,13 @@ export default function Estudiantes() {
       }
       
       queryClient.invalidateQueries({ queryKey: ['instructor-students', user?.id, userProfile?.role] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-students'] }); // Invalidate without parameters too
+      
+      // Force refetch manually
+      setTimeout(() => {
+        refetchStudents();
+      }, 500);
+      
       setDialogOpen(false);
       setEditingEnrollment(null);
       setFormData({

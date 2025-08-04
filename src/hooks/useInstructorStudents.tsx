@@ -104,6 +104,8 @@ export const useInstructorStudents = () => {
 
       return studentsWithProfiles as InstructorStudent[];
     },
-    enabled: !!user?.id && !!userProfile?.role
+    enabled: !!user?.id && !!userProfile?.role,
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always refetch
   });
 };
