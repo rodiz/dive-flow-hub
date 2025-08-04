@@ -33,9 +33,10 @@ const Navigation = () => {
     ];
 
     if (userProfile?.role === 'instructor' || userProfile?.role === 'diving_center') {
+      const studentsLabel = userProfile?.role === 'diving_center' ? "Estudiantes - Instructores" : "Estudiantes";
       baseItems.splice(2, 0, 
         { href: "/inmersiones", label: "Inmersiones", icon: MapPin },
-        { href: "/estudiantes", label: "Estudiantes", icon: Users }
+        { href: "/estudiantes", label: studentsLabel, icon: Users }
       );
     }
 

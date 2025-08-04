@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
+import { DivingCenterStudentManagement } from "@/components/DivingCenterStudentManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
@@ -144,6 +146,17 @@ export default function Estudiantes() {
 
   // Remove the loading state since we're using the hook now
   // The hook handles its own loading state
+
+  // Show diving center student management for diving centers
+  if (userProfile?.role === 'diving_center') {
+    return (
+      <div className="min-h-screen bg-gradient-surface">
+        <div className="container py-8">
+          <DivingCenterStudentManagement />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-surface">

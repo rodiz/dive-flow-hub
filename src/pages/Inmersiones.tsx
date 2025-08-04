@@ -10,6 +10,7 @@ import { MapPin, Calendar, Clock, Users, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 import { GroupDiveCreator } from "@/components/GroupDiveCreator";
+import { DivingCenterGroupDiveCreator } from "@/components/DivingCenterGroupDiveCreator";
 import { DiveParticipantDetails } from "@/components/DiveParticipantDetails";
 
 export default function Inmersiones() {
@@ -29,37 +30,95 @@ export default function Inmersiones() {
     if (!user) return;
     
     try {
-      // First get dives with participants
-      const { data: divesData, error } = await supabase
-        .from('dives')
-        .select(`
-          *,
-          dive_sites(name, location),
-          dive_participants(
-            id,
-            student_id,
-            depth_achieved,
-            bottom_time,
-            equipment_check,
-            medical_check,
-            individual_notes,
-            performance_rating,
-            oxygen_amount,
-            ballast_weight,
-            images,
-            videos,
-            tank_pressure_start,
-            tank_pressure_end,
-            wetsuit_thickness,
-            gas_mix,
-            visibility_conditions,
-            water_temperature,
-            current_strength,
-            safety_stop_time
-          )
-        `)
-        .eq('instructor_id', user.id)
-        .order('dive_date', { ascending: false });
+      let divesData;
+      let error;
+
+      if (userProfile?.role === 'diving_center') {
+        // For diving centers, get dives from all their instructors
+        const { data: instructorAssignments, error: instructorsError } = await supabase
+          .from('instructor_assignments')
+          .select('instructor_id')
+          .eq('diving_center_id', user.id)
+          .eq('assignment_status', 'active');
+
+        if (instructorsError) throw instructorsError;
+
+        const instructorIds = instructorAssignments.map(ia => ia.instructor_id);
+        
+        if (instructorIds.length === 0) {
+          setDives([]);
+          return;
+        }
+
+        const { data, error: divesError } = await supabase
+          .from('dives')
+          .select(`
+            *,
+            dive_sites(name, location),
+            dive_participants(
+              id,
+              student_id,
+              depth_achieved,
+              bottom_time,
+              equipment_check,
+              medical_check,
+              individual_notes,
+              performance_rating,
+              oxygen_amount,
+              ballast_weight,
+              images,
+              videos,
+              tank_pressure_start,
+              tank_pressure_end,
+              wetsuit_thickness,
+              gas_mix,
+              visibility_conditions,
+              water_temperature,
+              current_strength,
+              safety_stop_time
+            )
+          `)
+          .in('instructor_id', instructorIds)
+          .order('dive_date', { ascending: false });
+
+        divesData = data;
+        error = divesError;
+      } else {
+        // For instructors, get only their dives
+        const { data, error: divesError } = await supabase
+          .from('dives')
+          .select(`
+            *,
+            dive_sites(name, location),
+            dive_participants(
+              id,
+              student_id,
+              depth_achieved,
+              bottom_time,
+              equipment_check,
+              medical_check,
+              individual_notes,
+              performance_rating,
+              oxygen_amount,
+              ballast_weight,
+              images,
+              videos,
+              tank_pressure_start,
+              tank_pressure_end,
+              wetsuit_thickness,
+              gas_mix,
+              visibility_conditions,
+              water_temperature,
+              current_strength,
+              safety_stop_time
+            )
+          `)
+          .eq('instructor_id', user.id)
+          .order('dive_date', { ascending: false });
+
+        divesData = data;
+        error = divesError;
+      }
 
       if (error) throw error;
 
@@ -74,7 +133,7 @@ export default function Inmersiones() {
           .flatMap(dive => dive.dive_participants || [])
           .map(participant => participant.student_id)
           .filter(Boolean)
-      ));
+      )).filter((id): id is string => typeof id === 'string');
 
       console.log('Student IDs found:', allStudentIds);
 
@@ -165,13 +224,23 @@ export default function Inmersiones() {
                 </p>
               </CardHeader>
               <CardContent>
-                <GroupDiveCreator 
-                  diveSites={diveSites}
-                  onSuccess={() => {
-                    fetchDives();
-                    toast.success("Inmersión grupal creada exitosamente");
-                  }}
-                />
+                {userProfile?.role === 'diving_center' ? (
+                  <DivingCenterGroupDiveCreator 
+                    diveSites={diveSites}
+                    onSuccess={() => {
+                      fetchDives();
+                      toast.success("Inmersión grupal creada exitosamente");
+                    }}
+                  />
+                ) : (
+                  <GroupDiveCreator 
+                    diveSites={diveSites}
+                    onSuccess={() => {
+                      fetchDives();
+                      toast.success("Inmersión grupal creada exitosamente");
+                    }}
+                  />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
