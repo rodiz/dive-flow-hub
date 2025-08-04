@@ -141,38 +141,7 @@ export const DivingCenterDashboard = () => {
         ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Instructores */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Instructores</CardTitle>
-            <CardDescription>Instructores asignados al centro</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {instructors.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No hay instructores asignados
-                </p>
-              ) : (
-                instructors.slice(0, 5).map((instructor) => (
-                  <div key={instructor.id} className="flex items-center justify-between border-b pb-2">
-                    <div>
-                      <p className="font-medium">
-                        {instructor.profiles?.first_name} {instructor.profiles?.last_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {instructor.profiles?.certification_level || 'Nivel no especificado'}
-                      </p>
-                    </div>
-                    <Badge variant="default">Activo</Badge>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Estudiantes Recientes */}
         <Card>
           <CardHeader>
