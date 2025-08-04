@@ -85,16 +85,21 @@ serve(async (req) => {
     }
 
     // Check if instructor-student relationship already exists
-    const { data: existingRelation } = await supabaseAdmin
+    console.log(`Checking if relationship exists for instructor: ${instructorId}, student: ${authData.id}`);
+    
+    const { data: existingRelation, error: checkError } = await supabaseAdmin
       .from('instructor_students')
       .select('id')
       .eq('instructor_id', instructorId)
       .eq('student_id', authData.id)
       .single();
 
+    console.log('Existing relation check result:', { existingRelation, checkError });
+
     if (!existingRelation) {
+      console.log('Creating new instructor-student relationship...');
       // Add to instructor's students
-      const { error: relationError } = await supabaseAdmin
+      const { error: relationError, data: relationData } = await supabaseAdmin
         .from('instructor_students')
         .insert({
           instructor_id: instructorId,
@@ -102,18 +107,28 @@ serve(async (req) => {
           student_email: email.trim(),
           student_name: `${firstName.trim()} ${lastName.trim()}`,
           status: 'active'
-        });
+        })
+        .select();
 
       if (relationError) {
         console.error('Relation error:', relationError);
         throw relationError;
       }
-      console.log('Student-instructor relationship created');
+      
+      console.log('Student-instructor relationship created successfully:', relationData);
+      
+      // Verify the relationship was created by querying again
+      const { data: verifyRelation, error: verifyError } = await supabaseAdmin
+        .from('instructor_students')
+        .select('*')
+        .eq('instructor_id', instructorId)
+        .eq('student_id', authData.id);
+        
+      console.log('Verification query result:', { verifyRelation, verifyError });
+      
     } else {
       console.log('Student-instructor relationship already exists');
     }
-
-    console.log('Student-instructor relationship created successfully');
 
     return new Response(
       JSON.stringify({ 
