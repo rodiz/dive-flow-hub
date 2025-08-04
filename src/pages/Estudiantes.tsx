@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { DivingCenterStudentManagement } from "@/components/DivingCenterStudentManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
@@ -22,7 +24,11 @@ export default function Estudiantes() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEnrollment, setEditingEnrollment] = useState<any>(null);
   const [formData, setFormData] = useState({
-    student_id: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    city: '',
     course_id: '',
     start_date: '',
     enrollment_status: 'active'
@@ -30,6 +36,8 @@ export default function Estudiantes() {
 
   // Use the unified students hook
   const { data: instructorStudents = [] } = useInstructorStudents();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchEnrollments();
@@ -74,53 +82,153 @@ export default function Estudiantes() {
     }
   };
 
+  // Create new student mutation
+  const createStudentMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('create-student', {
+        body: {
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim() || null,
+          city: formData.city.trim() || null,
+          instructorId: user?.id
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data) => {
+      toast({
+        title: "Estudiante creado",
+        description: "El estudiante ha sido creado exitosamente",
+      });
+      
+      // Si hay curso seleccionado, crear la inscripción
+      if (formData.course_id) {
+        try {
+          const enrollmentData = {
+            student_id: data.user_id,
+            course_id: formData.course_id,
+            start_date: formData.start_date,
+            enrollment_status: formData.enrollment_status,
+            instructor_id: user?.id,
+            diving_center_id: userProfile?.role === 'diving_center' ? user?.id : null
+          };
+
+          const { error } = await supabase
+            .from('course_enrollments')
+            .insert(enrollmentData);
+
+          if (error) throw error;
+          toast({
+            title: "Inscripción creada",
+            description: "El estudiante ha sido inscrito al curso",
+          });
+        } catch (error) {
+          console.error('Error creating enrollment:', error);
+          toast({
+            title: "Advertencia",
+            description: "Estudiante creado pero no pudo ser inscrito al curso",
+            variant: "destructive",
+          });
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['instructor-students'] });
+      setDialogOpen(false);
+      setEditingEnrollment(null);
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        city: '',
+        course_id: '',
+        start_date: '',
+        enrollment_status: 'active'
+      });
+      fetchEnrollments();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Error al crear estudiante",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    try {
-      const enrollmentData = {
-        ...formData,
-        instructor_id: user.id,
-        diving_center_id: userProfile?.role === 'diving_center' ? user.id : null
-      };
+    // Validar campos obligatorios solo para nuevos estudiantes
+    if (!editingEnrollment && (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim())) {
+      toast({
+        title: "Error",
+        description: "Por favor completa nombre, apellido y email",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (editingEnrollment) {
+    if (editingEnrollment) {
+      // Update existing enrollment
+      try {
+        const enrollmentData = {
+          course_id: formData.course_id,
+          start_date: formData.start_date,
+          enrollment_status: formData.enrollment_status
+        };
+
         const { error } = await supabase
           .from('course_enrollments')
           .update(enrollmentData)
           .eq('id', editingEnrollment.id);
 
         if (error) throw error;
-        toast.success("Inscripción actualizada exitosamente");
-      } else {
-        const { error } = await supabase
-          .from('course_enrollments')
-          .insert(enrollmentData);
-
-        if (error) throw error;
-        toast.success("Estudiante inscrito exitosamente");
+        toast({
+          title: "Inscripción actualizada",
+          description: "La inscripción ha sido actualizada exitosamente",
+        });
+        
+        setDialogOpen(false);
+        setEditingEnrollment(null);
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          city: '',
+          course_id: '',
+          start_date: '',
+          enrollment_status: 'active'
+        });
+        fetchEnrollments();
+      } catch (error) {
+        console.error('Error updating enrollment:', error);
+        toast({
+          title: "Error",
+          description: "Error al actualizar inscripción",
+          variant: "destructive",
+        });
       }
-
-      setDialogOpen(false);
-      setEditingEnrollment(null);
-      setFormData({
-        student_id: '',
-        course_id: '',
-        start_date: '',
-        enrollment_status: 'active'
-      });
-      fetchEnrollments();
-    } catch (error) {
-      console.error('Error saving enrollment:', error);
-      toast.error("Error al guardar inscripción");
+    } else {
+      // Create new student
+      createStudentMutation.mutate();
     }
   };
 
   const openEditDialog = (enrollment: any) => {
     setEditingEnrollment(enrollment);
     setFormData({
-      student_id: enrollment.student_id,
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      city: '',
       course_id: enrollment.course_id,
       start_date: enrollment.start_date,
       enrollment_status: enrollment.enrollment_status
@@ -136,11 +244,18 @@ export default function Estudiantes() {
         .eq('id', enrollmentId);
 
       if (error) throw error;
-      toast.success("Estado actualizado exitosamente");
+      toast({
+        title: "Estado actualizado",
+        description: "El estado ha sido actualizado exitosamente",
+      });
       fetchEnrollments();
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error("Error al actualizar estado");
+      toast({
+        title: "Error",
+        description: "Error al actualizar estado",
+        variant: "destructive",
+      });
     }
   };
 
@@ -179,30 +294,71 @@ export default function Estudiantes() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
-                  {editingEnrollment ? 'Editar Inscripción' : 'Nueva Inscripción'}
+                  {editingEnrollment ? 'Editar Inscripción' : 'Crear Nuevo Estudiante'}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="student_id">Estudiante</Label>
-                  <Select value={formData.student_id} onValueChange={(value) => setFormData(prev => ({ ...prev, student_id: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar estudiante" />
-                    </SelectTrigger>
-                     <SelectContent>
-                       {instructorStudents.filter(s => s.student_id).map((studentRel) => (
-                         <SelectItem key={studentRel.student_id} value={studentRel.student_id!}>
-                           {studentRel.profile?.first_name && studentRel.profile?.last_name 
-                             ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
-                             : studentRel.student_email}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                  </Select>
-                </div>
+                {!editingEnrollment && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">Nombre *</Label>
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                          placeholder="Nombre"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Apellido *</Label>
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                          placeholder="Apellido"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="email@ejemplo.com"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="phone">Teléfono</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="+57 300 123 4567"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="city">Ciudad</Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                        placeholder="Bogotá, Medellín, etc."
+                      />
+                    </div>
+                  </>
+                )}
                 
                 <div>
-                  <Label htmlFor="course_id">Curso</Label>
+                  <Label htmlFor="course_id">Curso (opcional)</Label>
                   <Select value={formData.course_id} onValueChange={(value) => setFormData(prev => ({ ...prev, course_id: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar curso" />
@@ -217,33 +373,42 @@ export default function Estudiantes() {
                   </Select>
                 </div>
                 
-                <div>
-                  <Label htmlFor="start_date">Fecha de Inicio</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    required
-                  />
-                </div>
+                {formData.course_id && (
+                  <>
+                    <div>
+                      <Label htmlFor="start_date">Fecha de Inicio</Label>
+                      <Input
+                        id="start_date"
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="enrollment_status">Estado</Label>
+                      <Select value={formData.enrollment_status} onValueChange={(value) => setFormData(prev => ({ ...prev, enrollment_status: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Activo</SelectItem>
+                          <SelectItem value="completed">Completado</SelectItem>
+                          <SelectItem value="suspended">Suspendido</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
                 
-                <div>
-                  <Label htmlFor="enrollment_status">Estado</Label>
-                  <Select value={formData.enrollment_status} onValueChange={(value) => setFormData(prev => ({ ...prev, enrollment_status: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Activo</SelectItem>
-                      <SelectItem value="completed">Completado</SelectItem>
-                      <SelectItem value="suspended">Suspendido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button type="submit" className="w-full">
-                  {editingEnrollment ? 'Actualizar' : 'Inscribir'} Estudiante
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={createStudentMutation.isPending}
+                >
+                  {createStudentMutation.isPending ? 'Creando...' : 
+                   editingEnrollment ? 'Actualizar Inscripción' : 'Crear Estudiante'}
                 </Button>
               </form>
             </DialogContent>
