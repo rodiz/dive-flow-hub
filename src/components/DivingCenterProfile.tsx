@@ -150,11 +150,10 @@ export const DivingCenterProfile = ({ userProfile }: DivingCenterProfileProps) =
 
   return (
     <Tabs defaultValue="info" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="info">Información</TabsTrigger>
         <TabsTrigger value="specialties">Especialidades</TabsTrigger>
         <TabsTrigger value="schedule">Horarios</TabsTrigger>
-        <TabsTrigger value="instructors">Instructores</TabsTrigger>
       </TabsList>
 
       <TabsContent value="info" className="space-y-6">
@@ -369,29 +368,6 @@ export const DivingCenterProfile = ({ userProfile }: DivingCenterProfileProps) =
         </Card>
       </TabsContent>
 
-      <TabsContent value="instructors" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Gestión de Instructores
-            </CardTitle>
-            <CardDescription>
-              Administra los instructores asignados a tu centro
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                La gestión de instructores se encuentra en la sección principal del perfil
-              </p>
-              <Button variant="outline">
-                Ir a Gestión de Instructores
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
     </Tabs>
   );
 };
