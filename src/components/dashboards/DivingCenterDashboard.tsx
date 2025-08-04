@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { InstructorManagementForCenter } from "@/components/InstructorManagementForCenter";
 
 export const DivingCenterDashboard = () => {
   const { user } = useAuth();
@@ -247,6 +248,9 @@ export const DivingCenterDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Instructor Management Section */}
+      <InstructorManagementForCenter />
     </div>
   );
 };
