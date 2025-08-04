@@ -32,21 +32,27 @@ export const useInstructorStudents = () => {
   return useQuery({
     queryKey: ['instructor-students', user?.id, userProfile?.role],
     queryFn: async () => {
+      console.log('🔍 useInstructorStudents - Starting query', { userId: user?.id, role: userProfile?.role });
       if (!user?.id) return [];
 
       let instructorStudents;
 
       if (userProfile?.role === 'diving_center') {
+        console.log('🏢 Querying as diving center');
         // For diving centers, get students from all their instructors
-        const { data: instructorAssignments } = await supabase
+        const { data: instructorAssignments, error: assignmentError } = await supabase
           .from('instructor_assignments')
           .select('instructor_id')
           .eq('diving_center_id', user.id)
           .eq('assignment_status', 'active');
 
+        console.log('👨‍🏫 Instructor assignments:', { instructorAssignments, assignmentError });
+
         const instructorIds = instructorAssignments?.map(ia => ia.instructor_id) || [];
+        console.log('📋 Instructor IDs:', instructorIds);
         
         if (instructorIds.length === 0) {
+          console.log('❌ No instructors found for diving center');
           return [];
         }
 
@@ -57,9 +63,11 @@ export const useInstructorStudents = () => {
           .eq('status', 'active')
           .order('created_at', { ascending: false });
 
+        console.log('👥 Students query result (diving center):', { data, relationsError, instructorIds });
         if (relationsError) throw relationsError;
         instructorStudents = data;
       } else {
+        console.log('👨‍🏫 Querying as instructor');
         // For instructors, get only their students
         const { data, error: relationsError } = await supabase
           .from('instructor_students')
@@ -68,11 +76,15 @@ export const useInstructorStudents = () => {
           .eq('status', 'active')
           .order('created_at', { ascending: false });
 
+        console.log('👥 Students query result (instructor):', { data, relationsError, instructorId: user.id });
         if (relationsError) throw relationsError;
         instructorStudents = data;
       }
 
+      console.log('📊 Final instructor students:', instructorStudents);
+      
       if (!instructorStudents || instructorStudents.length === 0) {
+        console.log('❌ No students found, returning empty array');
         return [];
       }
 
@@ -102,6 +114,7 @@ export const useInstructorStudents = () => {
         };
       });
 
+      console.log('✅ Final result with profiles:', studentsWithProfiles);
       return studentsWithProfiles as InstructorStudent[];
     },
     enabled: !!user?.id && !!userProfile?.role,
