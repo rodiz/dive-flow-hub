@@ -27,22 +27,50 @@ export interface InstructorStudent {
 }
 
 export const useInstructorStudents = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   return useQuery({
-    queryKey: ['instructor-students', user?.id],
+    queryKey: ['instructor-students', user?.id, userProfile?.role],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Get instructor-student relationships
-      const { data: instructorStudents, error: relationsError } = await supabase
-        .from('instructor_students')
-        .select('*, student_name')
-        .eq('instructor_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      let instructorStudents;
 
-      if (relationsError) throw relationsError;
+      if (userProfile?.role === 'diving_center') {
+        // For diving centers, get students from all their instructors
+        const { data: instructorAssignments } = await supabase
+          .from('instructor_assignments')
+          .select('instructor_id')
+          .eq('diving_center_id', user.id)
+          .eq('assignment_status', 'active');
+
+        const instructorIds = instructorAssignments?.map(ia => ia.instructor_id) || [];
+        
+        if (instructorIds.length === 0) {
+          return [];
+        }
+
+        const { data, error: relationsError } = await supabase
+          .from('instructor_students')
+          .select('*, student_name')
+          .in('instructor_id', instructorIds)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (relationsError) throw relationsError;
+        instructorStudents = data;
+      } else {
+        // For instructors, get only their students
+        const { data, error: relationsError } = await supabase
+          .from('instructor_students')
+          .select('*, student_name')
+          .eq('instructor_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (relationsError) throw relationsError;
+        instructorStudents = data;
+      }
 
       if (!instructorStudents || instructorStudents.length === 0) {
         return [];
@@ -76,6 +104,6 @@ export const useInstructorStudents = () => {
 
       return studentsWithProfiles as InstructorStudent[];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && !!userProfile?.role
   });
 };

@@ -11,8 +11,6 @@ import { toast } from "sonner";
 import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
-import { DivingCenterStudentManagement } from "@/components/DivingCenterStudentManagement";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -49,15 +47,35 @@ export default function Estudiantes() {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('course_enrollments')
         .select(`
           *,
           courses(name, code, certification_agency),
           profiles!course_enrollments_student_id_fkey(first_name, last_name, email, certification_level)
-        `)
-        .eq('instructor_id', user.id)
-        .order('start_date', { ascending: false });
+        `);
+
+      if (userProfile?.role === 'diving_center') {
+        // For diving centers, get enrollments from all their instructors
+        const { data: instructorAssignments } = await supabase
+          .from('instructor_assignments')
+          .select('instructor_id')
+          .eq('diving_center_id', user.id)
+          .eq('assignment_status', 'active');
+
+        const instructorIds = instructorAssignments?.map(ia => ia.instructor_id) || [];
+        if (instructorIds.length > 0) {
+          query = query.in('instructor_id', instructorIds);
+        } else {
+          setEnrollments([]);
+          return;
+        }
+      } else {
+        // For instructors, get only their enrollments
+        query = query.eq('instructor_id', user.id);
+      }
+
+      const { data, error } = await query.order('start_date', { ascending: false });
 
       if (error) throw error;
       setEnrollments(data || []);
@@ -82,9 +100,25 @@ export default function Estudiantes() {
     }
   };
 
-  // Create new student mutation
+  // Create new student mutation - same for instructors and diving centers
   const createStudentMutation = useMutation({
     mutationFn: async () => {
+      // For diving centers, we need to pick the first available instructor
+      let instructorId = user?.id;
+      
+      if (userProfile?.role === 'diving_center') {
+        const { data: instructorAssignments } = await supabase
+          .from('instructor_assignments')
+          .select('instructor_id')
+          .eq('diving_center_id', user.id)
+          .eq('assignment_status', 'active')
+          .limit(1);
+        
+        if (instructorAssignments && instructorAssignments.length > 0) {
+          instructorId = instructorAssignments[0].instructor_id;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('create-student', {
         body: {
           firstName: formData.firstName.trim(),
@@ -92,7 +126,7 @@ export default function Estudiantes() {
           email: formData.email.trim(),
           phone: formData.phone.trim() || null,
           city: formData.city.trim() || null,
-          instructorId: user?.id
+          instructorId: instructorId
         }
       });
 
@@ -262,23 +296,15 @@ export default function Estudiantes() {
   // Remove the loading state since we're using the hook now
   // The hook handles its own loading state
 
-  // Show diving center student management for diving centers
-  if (userProfile?.role === 'diving_center') {
-    return (
-      <div className="min-h-screen bg-gradient-surface">
-        <div className="container py-8">
-          <DivingCenterStudentManagement />
-        </div>
-      </div>
-    );
-  }
-
+  // Remove the diving center specific component - use same functionality for all
   return (
     <div className="min-h-screen bg-gradient-surface">
       <div className="container py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-primary mb-2">Estudiantes</h1>
+            <h1 className="text-4xl font-bold text-primary mb-2">
+              {userProfile?.role === 'diving_center' ? 'Estudiantes - Instructores' : 'Estudiantes'}
+            </h1>
             <p className="text-xl text-muted-foreground">
               Gestiona las inscripciones y progreso de tus estudiantes
             </p>
