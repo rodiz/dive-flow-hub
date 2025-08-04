@@ -88,23 +88,50 @@ export const DivingCenterGroupDiveCreator = ({ diveSites, onSuccess }: DivingCen
 
       const { data: studentRelations, error: studentsError } = await supabase
         .from('instructor_students')
-        .select(`
-          student_id,
-          instructor_id,
-          profiles!student_id(
-            user_id,
-            first_name,
-            last_name,
-            email,
-            certification_level
-          )
-        `)
+        .select('*')
         .in('instructor_id', instructorIds)
         .eq('status', 'active')
         .not('student_id', 'is', null);
 
       if (studentsError) throw studentsError;
-      setStudents(studentRelations || []);
+      
+      if (!studentRelations || studentRelations.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      // Get student IDs and fetch their profiles separately
+      const studentIds = studentRelations
+        .map(s => s.student_id)
+        .filter(Boolean);
+
+      if (studentIds.length === 0) {
+        setStudents(studentRelations.map(s => ({ ...s, profiles: null })));
+        return;
+      }
+
+      // Get profiles for students
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, email, certification_level')
+        .in('user_id', studentIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Combine data
+      const studentsWithProfiles = studentRelations.map(student => {
+        const profile = profiles?.find(p => p.user_id === student.student_id);
+        return {
+          ...student,
+          profiles: profile || null
+        };
+      });
+
+      console.log('Students with profiles:', studentsWithProfiles);
+      setStudents(studentsWithProfiles);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast.error("Error al cargar estudiantes");

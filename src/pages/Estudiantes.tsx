@@ -2,17 +2,18 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { InstructorManagementForCenter } from "@/components/InstructorManagementForCenter";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
@@ -41,7 +42,6 @@ export default function Estudiantes() {
     fetchEnrollments();
     fetchCourses();
   }, [user]);
-
 
   const fetchEnrollments = async () => {
     if (!user) return;
@@ -83,7 +83,6 @@ export default function Estudiantes() {
       console.error('Error fetching enrollments:', error);
     }
   };
-
 
   const fetchCourses = async () => {
     try {
@@ -293,10 +292,6 @@ export default function Estudiantes() {
     }
   };
 
-  // Remove the loading state since we're using the hook now
-  // The hook handles its own loading state
-
-  // Remove the diving center specific component - use same functionality for all
   return (
     <div className="min-h-screen bg-gradient-surface">
       <div className="container py-8">
@@ -441,105 +436,209 @@ export default function Estudiantes() {
           </Dialog>
         </div>
 
-        <div className="grid gap-6">
-          {instructorStudents.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">No hay estudiantes registrados</p>
-              </CardContent>
-            </Card>
-          ) : (
-            instructorStudents.map((studentRel) => (
-              <Card key={studentRel.id} className="hover:shadow-lg transition-shadow">
+        <Tabs defaultValue={userProfile?.role === 'diving_center' ? 'instructors' : 'students'} className="w-full">
+          <TabsList className={`grid w-full ${userProfile?.role === 'diving_center' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {userProfile?.role === 'diving_center' && (
+              <TabsTrigger value="instructors">Instructores</TabsTrigger>
+            )}
+            <TabsTrigger value="students">Estudiantes</TabsTrigger>
+            <TabsTrigger value="courses">Cursos - Estudiantes</TabsTrigger>
+          </TabsList>
+
+          {userProfile?.role === 'diving_center' && (
+            <TabsContent value="instructors" className="space-y-6">
+              <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        {studentRel.profile?.first_name && studentRel.profile?.last_name 
-                          ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
-                          : studentRel.student_email}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {studentRel.profile?.email || studentRel.student_email}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant="secondary">
-                        Activo
-                      </Badge>
-                    </div>
-                  </div>
+                  <CardTitle>Gestión de Instructores</CardTitle>
+                  <CardDescription>
+                    Administra los instructores asignados a tu centro de buceo
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Award className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm">
-                          {studentRel.profile?.certification_level || 'Sin certificación'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Nivel actual</p>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm">
-                        Rol: {studentRel.profile?.role === 'student' ? 'Estudiante' : studentRel.profile?.role}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {studentRel.profile?.city ? `${studentRel.profile.city}, ${studentRel.profile.country}` : studentRel.profile?.country}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Información adicional del estudiante */}
-                  {studentRel.profile && (
-                    <div className="space-y-3 pt-4 border-t">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InstructorManagementForCenter />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          <TabsContent value="students" className="space-y-6">
+            <div className="grid gap-6">
+              {instructorStudents.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">No hay estudiantes registrados</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                instructorStudents.map((studentRel) => (
+                  <Card key={studentRel.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
                         <div>
-                          <p className="text-xs text-muted-foreground">Teléfono</p>
-                          <p className="text-sm">{studentRel.profile.phone || 'No registrado'}</p>
+                          <CardTitle className="flex items-center gap-2">
+                            <User className="h-5 w-5" />
+                            {studentRel.profile?.first_name && studentRel.profile?.last_name 
+                              ? `${studentRel.profile.first_name} ${studentRel.profile.last_name}`
+                              : studentRel.student_email}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {studentRel.profile?.email || studentRel.student_email}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant="secondary">
+                            Activo
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Award className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm">
+                              {studentRel.profile?.certification_level || 'Sin certificación'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Nivel actual</p>
+                          </div>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Agencia de certificación</p>
-                          <p className="text-sm">{studentRel.profile.certification_agency || 'No especificada'}</p>
+                          <p className="text-sm">
+                            Rol: {studentRel.profile?.role === 'student' ? 'Estudiante' : studentRel.profile?.role}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {studentRel.profile?.city ? `${studentRel.profile.city}, ${studentRel.profile.country}` : studentRel.profile?.country}
+                          </p>
                         </div>
                       </div>
                       
-                      {studentRel.notes && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">Notas del instructor</p>
-                          <p className="text-sm">{studentRel.notes}</p>
+                      {/* Información adicional del estudiante */}
+                      {studentRel.profile && (
+                        <div className="space-y-3 pt-4 border-t">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Teléfono</p>
+                              <p className="text-sm">{studentRel.profile.phone || 'No registrado'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Agencia de certificación</p>
+                              <p className="text-sm">{studentRel.profile.certification_agency || 'No especificada'}</p>
+                            </div>
+                          </div>
+                          
+                          {studentRel.notes && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Notas del instructor</p>
+                              <p className="text-sm">{studentRel.notes}</p>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
+                      
+                      {/* Botones de acción */}
+                      <div className="flex gap-2 mt-4 pt-4 border-t">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalles
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button variant="default" size="sm" className="bg-gradient-ocean">
+                          <Send className="h-4 w-4 mr-2" />
+                          Enviar Reporte
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          WhatsApp
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="courses" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Inscripciones de Cursos</CardTitle>
+                <CardDescription>
+                  Gestiona las inscripciones de estudiantes a cursos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {enrollments.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No hay inscripciones registradas</p>
+                  ) : (
+                    enrollments.map((enrollment) => (
+                      <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <GraduationCap className="h-5 w-5 text-primary" />
+                                <h3 className="font-medium">
+                                  {enrollment.profiles?.first_name} {enrollment.profiles?.last_name}
+                                </h3>
+                                <Badge 
+                                  variant={
+                                    enrollment.enrollment_status === 'completed' ? 'default' : 
+                                    enrollment.enrollment_status === 'active' ? 'secondary' : 'destructive'
+                                  }
+                                >
+                                  {enrollment.enrollment_status === 'completed' ? 'Completado' : 
+                                   enrollment.enrollment_status === 'active' ? 'Activo' : 'Suspendido'}
+                                </Badge>
+                              </div>
+                              
+                              <div className="text-sm text-muted-foreground">
+                                <p><strong>Curso:</strong> {enrollment.courses?.name} ({enrollment.courses?.code})</p>
+                                <p><strong>Email:</strong> {enrollment.profiles?.email}</p>
+                                <p><strong>Inicio:</strong> {new Date(enrollment.start_date).toLocaleDateString()}</p>
+                                {enrollment.completion_date && (
+                                  <p><strong>Completado:</strong> {new Date(enrollment.completion_date).toLocaleDateString()}</p>
+                                )}
+                                <p><strong>Progreso:</strong> {enrollment.progress_percentage || 0}%</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(enrollment)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              
+                              {enrollment.enrollment_status === 'active' && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => updateEnrollmentStatus(enrollment.id, 'completed')}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  Completar
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
                   )}
-                  
-                  {/* Botones de acción */}
-                  <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver Detalles
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
-                    <Button variant="default" size="sm" className="bg-gradient-ocean">
-                      <Send className="h-4 w-4 mr-2" />
-                      Enviar Reporte
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      WhatsApp
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
