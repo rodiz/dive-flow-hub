@@ -117,44 +117,6 @@ export function InstructorManagement({ viewMode = 'diving_center' }: InstructorM
 
   return (
     <div className="space-y-6">
-      {viewMode === 'diving_center' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Instructores del Centro ({instructors.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              {instructors.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No hay instructores asignados a este centro
-                </p>
-              ) : (
-                instructors.map((assignment) => (
-                  <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">
-                        {assignment.instructor.first_name} {assignment.instructor.last_name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">{assignment.instructor.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Asignado: {new Date(assignment.assigned_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge 
-                      variant={assignment.assignment_status === 'active' ? 'default' : 'secondary'}
-                    >
-                      {assignment.assignment_status === 'active' ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
