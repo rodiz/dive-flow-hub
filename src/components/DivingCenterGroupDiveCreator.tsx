@@ -70,6 +70,8 @@ export const DivingCenterGroupDiveCreator = ({ diveSites, onSuccess }: DivingCen
     if (!user) return;
     
     try {
+      console.log('🔍 Fetching students for diving center:', user.id);
+      
       // Obtener todos los estudiantes de todos los instructores del centro
       const { data: instructorAssignments, error: instructorsError } = await supabase
         .from('instructor_assignments')
@@ -77,11 +79,15 @@ export const DivingCenterGroupDiveCreator = ({ diveSites, onSuccess }: DivingCen
         .eq('diving_center_id', user.id)
         .eq('assignment_status', 'active');
 
+      console.log('👨‍🏫 Instructor assignments:', { instructorAssignments, instructorsError });
+
       if (instructorsError) throw instructorsError;
 
-      const instructorIds = instructorAssignments.map(ia => ia.instructor_id);
+      const instructorIds = instructorAssignments?.map(ia => ia.instructor_id) || [];
+      console.log('📋 Instructor IDs:', instructorIds);
       
       if (instructorIds.length === 0) {
+        console.log('❌ No instructors found for diving center');
         setStudents([]);
         return;
       }
@@ -93,9 +99,12 @@ export const DivingCenterGroupDiveCreator = ({ diveSites, onSuccess }: DivingCen
         .eq('status', 'active')
         .not('student_id', 'is', null);
 
+      console.log('👥 Student relations query result:', { studentRelations, studentsError });
+
       if (studentsError) throw studentsError;
       
       if (!studentRelations || studentRelations.length === 0) {
+        console.log('❌ No student relations found');
         setStudents([]);
         return;
       }
@@ -104,6 +113,8 @@ export const DivingCenterGroupDiveCreator = ({ diveSites, onSuccess }: DivingCen
       const studentIds = studentRelations
         .map(s => s.student_id)
         .filter(Boolean);
+
+      console.log('📧 Student IDs to fetch profiles for:', studentIds);
 
       if (studentIds.length === 0) {
         setStudents(studentRelations.map(s => ({ ...s, profiles: null })));
