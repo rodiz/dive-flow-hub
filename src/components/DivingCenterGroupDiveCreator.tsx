@@ -182,15 +182,26 @@ export const DivingCenterGroupDiveCreator = ({ diveSites, onSuccess }: DivingCen
       if (diveError) throw diveError;
 
       // Crear participantes
+      console.log('Creating participants:', {
+        selectedStudents,
+        selectedInstructor,
+        diveId: diveData.id
+      });
+
       const participants = selectedStudents.map(studentId => ({
         dive_id: diveData.id,
         student_id: studentId,
         instructor_id: selectedInstructor
       }));
 
-      const { error: participantsError } = await supabase
+      console.log('Participants to insert:', participants);
+
+      const { data: participantsData, error: participantsError } = await supabase
         .from('dive_participants')
-        .insert(participants);
+        .insert(participants)
+        .select();
+
+      console.log('Participants insert result:', { participantsData, participantsError });
 
       if (participantsError) throw participantsError;
 
