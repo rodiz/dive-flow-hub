@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { InstructorManagementForCenter } from "@/components/InstructorManagementForCenter";
 import { StudentDetailedReport } from "@/components/StudentDetailedReport";
+import { ReportsList } from "@/components/ReportsList";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
@@ -887,76 +888,24 @@ export default function Estudiantes() {
 
         {/* Student Reports Modal */}
         <Dialog open={showReportsModal} onOpenChange={setShowReportsModal}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Reportes Enviados - {selectedStudentForReports?.first_name} {selectedStudentForReports?.last_name}
+                Reportes - {selectedStudentForReports?.first_name} {selectedStudentForReports?.last_name}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
-              {studentReports.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No hay reportes enviados para este estudiante</p>
-                </div>
-              ) : (
-                studentReports.map((report) => (
-                  <Card key={report.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">
-                              {report.report_type === 'progreso' ? 'Progreso' : 'Evaluación'}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(report.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm font-medium">
-                              {report.content}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Instructor: {report.instructor_name}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => sendToWhatsApp(report)}
-                            className="flex items-center gap-1"
-                          >
-                            <MessageSquare className="h-3 w-3" />
-                            WhatsApp
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteReport(report.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+            <div className="h-[70vh] overflow-y-auto">
+              {selectedStudentForReports && (
+                <ReportsList 
+                  studentId={selectedStudentForReports.id}
+                  onViewReport={(report) => {
+                    // Here you could open a detailed view of the report
+                    console.log('View report:', report);
+                  }}
+                />
               )}
-            </div>
-            
-            <div className="flex justify-end pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowReportsModal(false)}>
-                Cerrar
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
