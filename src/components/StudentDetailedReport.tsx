@@ -537,7 +537,7 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           ) : (
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview">Resumen</TabsTrigger>
-              <TabsTrigger value="dives">Seleccionar Inmersiones</TabsTrigger>
+              <TabsTrigger value="dives">INMERSIONES REALIZADAS</TabsTrigger>
               <TabsTrigger value="multimedia">Multimedia</TabsTrigger>
             </TabsList>
           )}
