@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,9 @@ import {
   Download,
   TrendingUp,
   Award,
-  Send
+  Send,
+  Upload,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -64,11 +67,14 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   const [selectedDives, setSelectedDives] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [studentMediaFiles, setStudentMediaFiles] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen && student.id) {
       fetchStudentDives();
+      fetchStudentMediaFiles();
     }
   }, [isOpen, student.id]);
 
@@ -138,6 +144,99 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStudentMediaFiles = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('student-multimedia')
+        .list(`${student.id}/`, {
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (error) throw error;
+
+      const mediaUrls = data?.map(file => {
+        const { data: urlData } = supabase.storage
+          .from('student-multimedia')
+          .getPublicUrl(`${student.id}/${file.name}`);
+        return urlData.publicUrl;
+      }) || [];
+
+      setStudentMediaFiles(mediaUrls);
+    } catch (error) {
+      console.error('Error fetching student media:', error);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+        const filePath = `${student.id}/${fileName}`;
+
+        const { error } = await supabase.storage
+          .from('student-multimedia')
+          .upload(filePath, file);
+
+        if (error) throw error;
+        return filePath;
+      });
+
+      await Promise.all(uploadPromises);
+      
+      toast({
+        title: "Multimedia subida",
+        description: `${files.length} archivo(s) subido(s) exitosamente`,
+      });
+
+      fetchStudentMediaFiles();
+    } catch (error: any) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error al subir archivos",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      // Reset input
+      event.target.value = '';
+    }
+  };
+
+  const handleDeleteMedia = async (mediaUrl: string) => {
+    try {
+      // Extract file path from URL
+      const urlParts = mediaUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = `${student.id}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('student-multimedia')
+        .remove([filePath]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Archivo eliminado",
+        description: "El archivo ha sido eliminado exitosamente",
+      });
+
+      fetchStudentMediaFiles();
+    } catch (error: any) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error al eliminar archivo",
+        variant: "destructive",
+      });
     }
   };
 
@@ -400,8 +499,76 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           </TabsContent>
 
           <TabsContent value="multimedia" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Multimedia del Estudiante</h3>
+              <div className="flex gap-2">
+                <Input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="hidden"
+                  id="media-upload"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => document.getElementById('media-upload')?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {uploading ? 'Subiendo...' : 'Subir Multimedia'}
+                </Button>
+              </div>
+            </div>
+
             <ScrollArea className="h-96">
               <div className="space-y-4">
+                {/* Student's own multimedia files */}
+                {studentMediaFiles.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        <span>Archivos Generales del Estudiante</span>
+                        <Badge variant="secondary">{studentMediaFiles.length} archivos</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-3">
+                        {studentMediaFiles.map((mediaUrl, idx) => (
+                          <div key={idx} className="relative group">
+                            <div className="aspect-square bg-muted rounded overflow-hidden">
+                              {mediaUrl.includes('video') || mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                                <video 
+                                  src={mediaUrl} 
+                                  className="w-full h-full object-cover"
+                                  controls
+                                />
+                              ) : (
+                                <img 
+                                  src={mediaUrl} 
+                                  alt={`Multimedia ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDeleteMedia(mediaUrl)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Dive multimedia */}
                 {dives.filter(d => selectedDives.includes(d.id)).map((dive) => {
                   const allImages = [...(dive.photos || []), ...(dive.dive_participants[0]?.images || [])];
                   const allVideos = [...(dive.videos || []), ...(dive.dive_participants[0]?.videos || [])];
@@ -469,6 +636,21 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                     </Card>
                   );
                 })}
+
+                {studentMediaFiles.length === 0 && dives.filter(d => selectedDives.includes(d.id)).every(d => 
+                  (d.photos?.length || 0) === 0 && 
+                  (d.videos?.length || 0) === 0 && 
+                  (d.dive_participants[0]?.images?.length || 0) === 0 && 
+                  (d.dive_participants[0]?.videos?.length || 0) === 0
+                ) && (
+                  <div className="text-center py-8">
+                    <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No hay multimedia disponible</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Sube archivos para comenzar a crear un portafolio multimedia del estudiante
+                    </p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </TabsContent>
