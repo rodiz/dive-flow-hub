@@ -58,7 +58,7 @@ export function ReportPreviewModal({
   studentMediaFiles 
 }: ReportPreviewModalProps) {
   const [showPreview, setShowPreview] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const getTotalStats = () => {
@@ -127,12 +127,16 @@ export function ReportPreviewModal({
                     setLoading(true);
                     try {
                       const blob = await pdf(reportDocument).toBlob();
-                      const url = URL.createObjectURL(blob);
-                      setPdfUrl(url);
-                      setShowPreview(true);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const base64data = reader.result as string;
+                        setPdfBase64(base64data);
+                        setShowPreview(true);
+                        setLoading(false);
+                      };
+                      reader.readAsDataURL(blob);
                     } catch (error) {
                       console.error('Error generating PDF preview:', error);
-                    } finally {
                       setLoading(false);
                     }
                   }}
@@ -195,13 +199,13 @@ export function ReportPreviewModal({
               </div>
               
               <div className="flex-1 border rounded-lg overflow-hidden">
-                {pdfUrl ? (
-                  <iframe 
-                    src={pdfUrl} 
+                {pdfBase64 ? (
+                  <embed 
+                    src={pdfBase64} 
+                    type="application/pdf"
                     width="100%" 
                     height="100%" 
                     style={{ border: 'none' }}
-                    title="PDF Preview"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">

@@ -30,6 +30,8 @@ interface DiveData {
     tank_pressure_end?: number;
     oxygen_amount?: number;
     ballast_weight?: number;
+    equipment_check_completed?: boolean;
+    medical_check_completed?: boolean;
   }>;
   photos: string[];
   videos: string[];
@@ -217,10 +219,10 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
     return '#dc2626';
   };
 
-  const shortenUrl = (url: string, maxLength: number = 50) => {
+  const shortenUrl = (url: string, maxLength: number = 40) => {
     if (url.length <= maxLength) return url;
-    const start = url.substring(0, 20);
-    const end = url.substring(url.length - 25);
+    const start = url.substring(0, 15);
+    const end = url.substring(url.length - 20);
     return `${start}...${end}`;
   };
 
@@ -370,36 +372,56 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
                   <Text style={[styles.label, { marginBottom: 3 }]}>Detalles Técnicos:</Text>
                   <View style={styles.diveStats}>
                     {dive.dive_participants[0].wetsuit_thickness && (
-                      <Text style={styles.diveStatItem}>Traje: {dive.dive_participants[0].wetsuit_thickness}mm</Text>
+                      <Text style={styles.diveStatItem}>Grosor Traje: {dive.dive_participants[0].wetsuit_thickness}mm</Text>
                     )}
                     {dive.dive_participants[0].gas_mix && (
-                      <Text style={styles.diveStatItem}>Gas: {dive.dive_participants[0].gas_mix}</Text>
+                      <Text style={styles.diveStatItem}>Mezcla Gas: {dive.dive_participants[0].gas_mix}</Text>
                     )}
                     {dive.dive_participants[0].visibility_conditions && (
                       <Text style={styles.diveStatItem}>Visibilidad: {dive.dive_participants[0].visibility_conditions}m</Text>
                     )}
                   </View>
                   <View style={styles.diveStats}>
-                    {dive.dive_participants[0].water_temperature && (
-                      <Text style={styles.diveStatItem}>Temp: {dive.dive_participants[0].water_temperature}°C</Text>
+                    {dive.dive_participants[0].water_temperature !== undefined && (
+                      <Text style={styles.diveStatItem}>Temp Agua: {dive.dive_participants[0].water_temperature}°C</Text>
                     )}
                     {dive.dive_participants[0].tank_pressure_start && (
-                      <Text style={styles.diveStatItem}>Presión I: {dive.dive_participants[0].tank_pressure_start}bar</Text>
+                      <Text style={styles.diveStatItem}>Presión Inicial: {dive.dive_participants[0].tank_pressure_start}bar</Text>
                     )}
                     {dive.dive_participants[0].tank_pressure_end && (
-                      <Text style={styles.diveStatItem}>Presión F: {dive.dive_participants[0].tank_pressure_end}bar</Text>
+                      <Text style={styles.diveStatItem}>Presión Final: {dive.dive_participants[0].tank_pressure_end}bar</Text>
                     )}
                   </View>
-                  {(dive.dive_participants[0].ballast_weight || dive.dive_participants[0].safety_stop_time) && (
+                  <View style={styles.diveStats}>
+                    {dive.dive_participants[0].ballast_weight && (
+                      <Text style={styles.diveStatItem}>Lastre: {dive.dive_participants[0].ballast_weight}kg</Text>
+                    )}
+                    {dive.dive_participants[0].safety_stop_time && (
+                      <Text style={styles.diveStatItem}>Parada Seguridad: {dive.dive_participants[0].safety_stop_time}min</Text>
+                    )}
+                    {dive.dive_participants[0].oxygen_amount && (
+                      <Text style={styles.diveStatItem}>Oxígeno: {dive.dive_participants[0].oxygen_amount}%</Text>
+                    )}
+                  </View>
+                  {dive.dive_participants[0].current_strength && (
                     <View style={styles.diveStats}>
-                      {dive.dive_participants[0].ballast_weight && (
-                        <Text style={styles.diveStatItem}>Lastre: {dive.dive_participants[0].ballast_weight}kg</Text>
-                      )}
-                      {dive.dive_participants[0].safety_stop_time && (
-                        <Text style={styles.diveStatItem}>Parada Seg: {dive.dive_participants[0].safety_stop_time}min</Text>
-                      )}
+                      <Text style={styles.diveStatItem}>Fuerza Corriente: {dive.dive_participants[0].current_strength}/10</Text>
                     </View>
                   )}
+                  
+                  {/* Equipment and Medical Checks */}
+                  <View style={styles.diveStats}>
+                    {dive.dive_participants[0].equipment_check_completed !== undefined && (
+                      <Text style={styles.diveStatItem}>
+                        Chequeo Equipo: {dive.dive_participants[0].equipment_check_completed ? 'Completado' : 'No completado'}
+                      </Text>
+                    )}
+                    {dive.dive_participants[0].medical_check_completed !== undefined && (
+                      <Text style={styles.diveStatItem}>
+                        Chequeo Médico: {dive.dive_participants[0].medical_check_completed ? 'Completado' : 'No completado'}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               )}
 
