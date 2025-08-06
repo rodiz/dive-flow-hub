@@ -32,7 +32,8 @@ import {
   Eye,
   Wrench,
   Shield,
-  BarChart3
+  BarChart3,
+  History
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -123,6 +124,8 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   const [uploading, setUploading] = useState(false);
   const [studentMediaFiles, setStudentMediaFiles] = useState<{ url: string; name: string; type: 'image' | 'video' }[]>([]);
   const [showReportPreview, setShowReportPreview] = useState(false);
+  const [reportType, setReportType] = useState<'single' | 'historical'>('historical');
+  const [singleDiveId, setSingleDiveId] = useState<string>('');
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const { toast } = useToast();
@@ -397,10 +400,19 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   };
 
   const generateReport = async () => {
-    if (selectedDives.length === 0) {
+    if (reportType === 'historical' && selectedDives.length === 0) {
       toast({
         title: "Error",
-        description: "Selecciona al menos una inmersión para el reporte",
+        description: "Selecciona al menos una inmersión para el reporte histórico",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (reportType === 'single' && !singleDiveId) {
+      toast({
+        title: "Error", 
+        description: "Selecciona una inmersión específica para el reporte individual",
         variant: "destructive",
       });
       return;
@@ -443,9 +455,66 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
             Reporte Detallado - {student.first_name} {student.last_name}
           </DialogTitle>
           <DialogDescription>
-            Visualiza y selecciona las inmersiones para generar un reporte completo del estudiante.
+            Selecciona el tipo de reporte y las inmersiones para generar un análisis completo.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Report Type Selection */}
+        <div className="border-b pb-4">
+          <div className="flex items-center gap-4 mb-4">
+            <h3 className="text-sm font-medium">Tipo de Reporte:</h3>
+            <div className="flex gap-2">
+              <Button
+                variant={reportType === 'historical' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setReportType('historical');
+                  setSingleDiveId('');
+                }}
+                className="flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                Reporte Histórico
+              </Button>
+              <Button
+                variant={reportType === 'single' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setReportType('single');
+                  setSelectedDives([]);
+                }}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Inmersión Individual
+              </Button>
+            </div>
+          </div>
+          
+          {reportType === 'single' && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium min-w-fit">Seleccionar inmersión:</label>
+              <select 
+                value={singleDiveId} 
+                onChange={(e) => setSingleDiveId(e.target.value)}
+                className="flex-1 px-3 py-2 border border-input bg-background rounded-md text-sm"
+              >
+                <option value="">-- Selecciona una inmersión --</option>
+                {dives.map(dive => (
+                  <option key={dive.id} value={dive.id}>
+                    {dive.dive_sites?.name} - {format(new Date(dive.dive_date), 'dd MMM yyyy', { locale: es })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {reportType === 'historical' && (
+            <div className="text-sm text-muted-foreground">
+              Selecciona múltiples inmersiones en las pestañas para incluir en el reporte histórico.
+            </div>
+          )}
+        </div>
 
         <Tabs defaultValue="overview" className="h-full">
           <TabsList className="grid w-full grid-cols-7">
@@ -567,10 +636,24 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                   dives.map((dive) => (
                     <Card key={dive.id} className="p-4">
                       <div className="flex items-start gap-3">
-                        <Checkbox 
-                          checked={selectedDives.includes(dive.id)}
-                          onCheckedChange={(checked) => handleDiveSelection(dive.id, checked as boolean)}
-                        />
+                        {reportType === 'historical' && (
+                          <Checkbox 
+                            checked={selectedDives.includes(dive.id)}
+                            onCheckedChange={(checked) => handleDiveSelection(dive.id, checked as boolean)}
+                          />
+                        )}
+                        {reportType === 'single' && (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id={dive.id}
+                              name="singleDive"
+                              checked={singleDiveId === dive.id}
+                              onChange={() => setSingleDiveId(dive.id)}
+                              className="h-4 w-4"
+                            />
+                          </div>
+                        )}
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <div>
@@ -1125,7 +1208,12 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
 
         <div className="flex justify-between items-center pt-4 border-t">
           <div className="text-sm text-muted-foreground">
-            {selectedDives.length} inmersiones seleccionadas de {dives.length}
+            {reportType === 'historical' 
+              ? `${selectedDives.length} inmersiones seleccionadas de ${dives.length}`
+              : singleDiveId 
+                ? `Inmersión seleccionada: ${dives.find(d => d.id === singleDiveId)?.dive_sites?.name || 'N/A'}`
+                : 'Ninguna inmersión seleccionada'
+            }
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
@@ -1133,11 +1221,14 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
             </Button>
             <Button 
               onClick={generateReport}
-              disabled={selectedDives.length === 0}
+              disabled={
+                (reportType === 'historical' && selectedDives.length === 0) ||
+                (reportType === 'single' && !singleDiveId)
+              }
               className="bg-gradient-ocean"
             >
               <Send className="h-4 w-4 mr-2" />
-              Generar Reporte
+              Generar {reportType === 'single' ? 'Reporte Individual' : 'Reporte Histórico'}
             </Button>
           </div>
         </div>
@@ -1150,6 +1241,8 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           dives={dives}
           selectedDives={selectedDives}
           studentMediaFiles={studentMediaFiles}
+          reportType={reportType}
+          singleDiveId={singleDiveId}
         />
       </DialogContent>
     </Dialog>
