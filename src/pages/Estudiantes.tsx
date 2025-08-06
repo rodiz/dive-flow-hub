@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, User, Mail, Award, GraduationCap, Send, FileText, Eye, Search, Filter } from "lucide-react";
+import { Plus, Edit, User, Mail, Award, GraduationCap, Send, FileText, Eye, Search, Filter, Trash2, MessageSquare, Calendar, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,9 @@ export default function Estudiantes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'certification' | 'city'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showReportsModal, setShowReportsModal] = useState(false);
+  const [selectedStudentForReports, setSelectedStudentForReports] = useState<any>(null);
+  const [studentReports, setStudentReports] = useState<any[]>([]);
 
   // Use the unified students hook
   const { data: instructorStudents = [], refetch: refetchStudents } = useInstructorStudents();
@@ -303,6 +306,51 @@ export default function Estudiantes() {
         variant: "destructive",
       });
     }
+  };
+
+  const fetchStudentReports = async (studentId: string) => {
+    // For now, use a mock data since the table doesn't exist yet
+    // This would be replaced with actual database query when the table is created
+    const mockReports = [
+      {
+        id: '1',
+        created_at: new Date().toISOString(),
+        report_type: 'progreso',
+        instructor_name: userProfile?.first_name + ' ' + userProfile?.last_name,
+        content: 'Reporte de progreso del estudiante'
+      },
+      {
+        id: '2', 
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        report_type: 'evaluacion',
+        instructor_name: userProfile?.first_name + ' ' + userProfile?.last_name,
+        content: 'Evaluación de habilidades'
+      }
+    ];
+    setStudentReports(mockReports);
+  };
+
+  const deleteReport = async (reportId: string) => {
+    // Mock delete functionality
+    setStudentReports(prev => prev.filter(report => report.id !== reportId));
+    toast({
+      title: "Reporte eliminado",
+      description: "El reporte ha sido eliminado exitosamente",
+    });
+  };
+
+  const sendToWhatsApp = (report: any) => {
+    const studentName = `${selectedStudentForReports?.first_name || ''} ${selectedStudentForReports?.last_name || ''}`.trim();
+    const message = `📊 *Reporte de Progreso*\n\n*Estudiante:* ${studentName}\n*Fecha:* ${new Date(report.created_at).toLocaleDateString()}\n*Instructor:* ${report.instructor_name || 'No especificado'}\n\nConsulta el reporte completo en el enlace adjunto.`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const openReportsModal = async (student: any) => {
+    setSelectedStudentForReports(student);
+    setShowReportsModal(true);
+    await fetchStudentReports(student.id);
   };
 
   return (
@@ -676,7 +724,19 @@ export default function Estudiantes() {
                           <Send className="h-4 w-4 mr-2" />
                           Enviar Reporte
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const matchingProfile = instructorStudents.find(s => s.student_id === studentRel.student_id)?.profile;
+                            openReportsModal({
+                              id: studentRel.student_id,
+                              first_name: matchingProfile?.first_name || studentRel.student_name?.split(' ')[0] || '',
+                              last_name: matchingProfile?.last_name || studentRel.student_name?.split(' ').slice(1).join(' ') || '',
+                              email: matchingProfile?.email || studentRel.student_email
+                            });
+                          }}
+                        >
                           <FileText className="h-4 w-4 mr-2" />
                           Reportes
                         </Button>
@@ -776,6 +836,82 @@ export default function Estudiantes() {
             student={selectedStudent}
           />
         )}
+
+        {/* Student Reports Modal */}
+        <Dialog open={showReportsModal} onOpenChange={setShowReportsModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Reportes Enviados - {selectedStudentForReports?.first_name} {selectedStudentForReports?.last_name}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {studentReports.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No hay reportes enviados para este estudiante</p>
+                </div>
+              ) : (
+                studentReports.map((report) => (
+                  <Card key={report.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {report.report_type === 'progreso' ? 'Progreso' : 'Evaluación'}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(report.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm font-medium">
+                              {report.content}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Instructor: {report.instructor_name}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => sendToWhatsApp(report)}
+                            className="flex items-center gap-1"
+                          >
+                            <MessageSquare className="h-3 w-3" />
+                            WhatsApp
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteReport(report.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowReportsModal(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
