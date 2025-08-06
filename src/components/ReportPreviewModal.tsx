@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { StudentReportPDF } from './StudentReportPDF';
 import { Download, Eye, Loader2 } from 'lucide-react';
 
@@ -58,6 +58,8 @@ export function ReportPreviewModal({
   studentMediaFiles 
 }: ReportPreviewModalProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const getTotalStats = () => {
     const selectedDiveData = dives.filter(d => selectedDives.includes(d.id));
@@ -121,12 +123,25 @@ export function ReportPreviewModal({
 
               <div className="flex gap-3">
                 <Button 
-                  onClick={() => setShowPreview(true)}
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const blob = await pdf(reportDocument).toBlob();
+                      const url = URL.createObjectURL(blob);
+                      setPdfUrl(url);
+                      setShowPreview(true);
+                    } catch (error) {
+                      console.error('Error generating PDF preview:', error);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
                   variant="outline"
                   className="flex items-center gap-2"
+                  disabled={loading}
                 >
-                  <Eye className="h-4 w-4" />
-                  Previsualizar PDF
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+                  {loading ? 'Generando...' : 'Previsualizar PDF'}
                 </Button>
                 
                 <PDFDownloadLink
@@ -180,9 +195,19 @@ export function ReportPreviewModal({
               </div>
               
               <div className="flex-1 border rounded-lg overflow-hidden">
-                <PDFViewer width="100%" height="100%" showToolbar={false}>
-                  {reportDocument}
-                </PDFViewer>
+                {pdfUrl ? (
+                  <iframe 
+                    src={pdfUrl} 
+                    width="100%" 
+                    height="100%" 
+                    style={{ border: 'none' }}
+                    title="PDF Preview"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                )}
               </div>
             </div>
           )}

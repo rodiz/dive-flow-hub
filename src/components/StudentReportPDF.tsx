@@ -20,6 +20,16 @@ interface DiveData {
     individual_notes: string;
     images: string[];
     videos: string[];
+    wetsuit_thickness?: number;
+    gas_mix?: string;
+    visibility_conditions?: number;
+    water_temperature?: number;
+    current_strength?: number;
+    safety_stop_time?: number;
+    tank_pressure_start?: number;
+    tank_pressure_end?: number;
+    oxygen_amount?: number;
+    ballast_weight?: number;
   }>;
   photos: string[];
   videos: string[];
@@ -207,6 +217,30 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
     return '#dc2626';
   };
 
+  const shortenUrl = (url: string, maxLength: number = 50) => {
+    if (url.length <= maxLength) return url;
+    const start = url.substring(0, 20);
+    const end = url.substring(url.length - 25);
+    return `${start}...${end}`;
+  };
+
+  const getAnalysisData = () => {
+    const depths = selectedDiveData.map(d => d.dive_participants[0]?.depth_achieved || d.depth_achieved || 0);
+    const times = selectedDiveData.map(d => d.dive_participants[0]?.bottom_time || d.bottom_time || 0);
+    const performances = selectedDiveData.map(d => d.dive_participants[0]?.performance_rating || 0).filter(p => p > 0);
+    
+    return {
+      avgDepth: depths.length > 0 ? (depths.reduce((a, b) => a + b, 0) / depths.length).toFixed(1) : '0',
+      depthTrend: depths.length > 1 ? (depths[depths.length - 1] > depths[0] ? 'Aumentando' : 'Estable') : 'N/A',
+      avgTime: times.length > 0 ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : '0',
+      performanceTrend: performances.length > 1 ? (performances[performances.length - 1] > performances[0] ? 'Mejorando' : 'Estable') : 'N/A',
+      totalExperience: times.reduce((a, b) => a + b, 0),
+      consistencyScore: depths.length > 1 ? (10 - (Math.max(...depths) - Math.min(...depths)) / Math.max(...depths) * 10).toFixed(1) : '10'
+    };
+  };
+
+  const analysis = getAnalysisData();
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -264,6 +298,37 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
           </View>
         </View>
 
+        {/* Analysis and Trends */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Análisis y Tendencias</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{analysis.avgDepth}m</Text>
+              <Text style={styles.statLabel}>Profundidad Promedio</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{analysis.avgTime}min</Text>
+              <Text style={styles.statLabel}>Tiempo Promedio</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{analysis.consistencyScore}</Text>
+              <Text style={styles.statLabel}>Consistencia</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{analysis.totalExperience}h</Text>
+              <Text style={styles.statLabel}>Experiencia Total</Text>
+            </View>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Tendencia de Profundidad:</Text>
+            <Text style={styles.value}>{analysis.depthTrend}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Tendencia de Rendimiento:</Text>
+            <Text style={styles.value}>{analysis.performanceTrend}</Text>
+          </View>
+        </View>
+
         {/* Selected Dives */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -299,6 +364,45 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
                 <Text style={styles.value}>{dive.dive_sites?.location}</Text>
               </View>
 
+              {/* Detailed Participant Information */}
+              {dive.dive_participants[0] && (
+                <View style={{ marginTop: 5 }}>
+                  <Text style={[styles.label, { marginBottom: 3 }]}>Detalles Técnicos:</Text>
+                  <View style={styles.diveStats}>
+                    {dive.dive_participants[0].wetsuit_thickness && (
+                      <Text style={styles.diveStatItem}>Traje: {dive.dive_participants[0].wetsuit_thickness}mm</Text>
+                    )}
+                    {dive.dive_participants[0].gas_mix && (
+                      <Text style={styles.diveStatItem}>Gas: {dive.dive_participants[0].gas_mix}</Text>
+                    )}
+                    {dive.dive_participants[0].visibility_conditions && (
+                      <Text style={styles.diveStatItem}>Visibilidad: {dive.dive_participants[0].visibility_conditions}m</Text>
+                    )}
+                  </View>
+                  <View style={styles.diveStats}>
+                    {dive.dive_participants[0].water_temperature && (
+                      <Text style={styles.diveStatItem}>Temp: {dive.dive_participants[0].water_temperature}°C</Text>
+                    )}
+                    {dive.dive_participants[0].tank_pressure_start && (
+                      <Text style={styles.diveStatItem}>Presión I: {dive.dive_participants[0].tank_pressure_start}bar</Text>
+                    )}
+                    {dive.dive_participants[0].tank_pressure_end && (
+                      <Text style={styles.diveStatItem}>Presión F: {dive.dive_participants[0].tank_pressure_end}bar</Text>
+                    )}
+                  </View>
+                  {(dive.dive_participants[0].ballast_weight || dive.dive_participants[0].safety_stop_time) && (
+                    <View style={styles.diveStats}>
+                      {dive.dive_participants[0].ballast_weight && (
+                        <Text style={styles.diveStatItem}>Lastre: {dive.dive_participants[0].ballast_weight}kg</Text>
+                      )}
+                      {dive.dive_participants[0].safety_stop_time && (
+                        <Text style={styles.diveStatItem}>Parada Seg: {dive.dive_participants[0].safety_stop_time}min</Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
               {dive.dive_participants[0]?.individual_notes && (
                 <Text style={styles.diveNotes}>
                   Notas: {dive.dive_participants[0].individual_notes}
@@ -313,7 +417,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
                   </Text>
                   {[...(dive.photos || []), ...(dive.videos || []), ...(dive.dive_participants[0]?.images || []), ...(dive.dive_participants[0]?.videos || [])].slice(0, 3).map((url, idx) => (
                     <Text key={idx} style={[styles.diveNotes, { fontSize: 8 }]}>
-                      • {url}
+                      • {shortenUrl(url)}
                     </Text>
                   ))}
                   {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) > 3 && (
@@ -375,7 +479,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
               {studentMediaFiles.slice(0, 10).map((media, index) => (
                 <View key={index} style={styles.row}>
                   <Text style={[styles.value, { fontSize: 9 }]}>
-                    {index + 1}. {media.name} ({media.type}) - {media.url}
+                    {index + 1}. {media.name} ({media.type}) - {shortenUrl(media.url, 60)}
                   </Text>
                 </View>
               ))}
