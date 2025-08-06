@@ -24,7 +24,15 @@ import {
   Award,
   Send,
   Upload,
-  Trash2
+  Trash2,
+  Heart,
+  Activity,
+  Thermometer,
+  Wind,
+  Eye,
+  Wrench,
+  Shield,
+  BarChart3
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -58,6 +66,19 @@ interface DiveData {
     individual_notes: string;
     images: string[];
     videos: string[];
+    oxygen_amount?: number;
+    ballast_weight?: number;
+    tank_pressure_start?: number;
+    tank_pressure_end?: number;
+    wetsuit_thickness?: number;
+    gas_mix?: string;
+    visibility_conditions?: number;
+    water_temperature?: number;
+    current_strength?: number;
+    safety_stop_time?: number;
+    equipment_check: boolean;
+    medical_check: boolean;
+    skills_completed?: any;
   }>;
   photos: string[];
   videos: string[];
@@ -70,6 +91,30 @@ interface DiveData {
   };
 }
 
+interface Certification {
+  id: string;
+  certification_level: string;
+  certification_agency: string;
+  certification_number?: string;
+  certification_date?: string;
+  expiration_date?: string;
+}
+
+interface MedicalRecord {
+  id: string;
+  dive_id?: string;
+  recorded_at: string;
+  cleared_to_dive: boolean;
+  heart_rate?: number;
+  blood_pressure_systolic?: number;
+  blood_pressure_diastolic?: number;
+  fitness_level?: number;
+  medical_conditions?: string;
+  allergies?: string;
+  medications?: string;
+  notes?: string;
+}
+
 export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetailedReportProps) {
   const [dives, setDives] = useState<DiveData[]>([]);
   const [selectedDives, setSelectedDives] = useState<string[]>([]);
@@ -78,12 +123,16 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   const [uploading, setUploading] = useState(false);
   const [studentMediaFiles, setStudentMediaFiles] = useState<{ url: string; name: string; type: 'image' | 'video' }[]>([]);
   const [showReportPreview, setShowReportPreview] = useState(false);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen && student.id) {
       fetchStudentDives();
       fetchStudentMediaFiles();
+      fetchCertifications();
+      fetchMedicalRecords();
     }
   }, [isOpen, student.id]);
 
@@ -100,6 +149,19 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           individual_notes,
           images,
           videos,
+          oxygen_amount,
+          ballast_weight,
+          tank_pressure_start,
+          tank_pressure_end,
+          wetsuit_thickness,
+          gas_mix,
+          visibility_conditions,
+          water_temperature,
+          current_strength,
+          safety_stop_time,
+          equipment_check,
+          medical_check,
+          skills_completed,
           dives!inner (
             id,
             dive_date,
@@ -138,7 +200,20 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           performance_rating: participant.performance_rating,
           individual_notes: participant.individual_notes,
           images: participant.images || [],
-          videos: participant.videos || []
+          videos: participant.videos || [],
+          oxygen_amount: participant.oxygen_amount,
+          ballast_weight: participant.ballast_weight,
+          tank_pressure_start: participant.tank_pressure_start,
+          tank_pressure_end: participant.tank_pressure_end,
+          wetsuit_thickness: participant.wetsuit_thickness,
+          gas_mix: participant.gas_mix,
+          visibility_conditions: participant.visibility_conditions,
+          water_temperature: participant.water_temperature,
+          current_strength: participant.current_strength,
+          safety_stop_time: participant.safety_stop_time,
+          equipment_check: participant.equipment_check,
+          medical_check: participant.medical_check,
+          skills_completed: participant.skills_completed
         }],
         photos: participant.dives.photos || [],
         videos: participant.dives.videos || [],
@@ -193,6 +268,53 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
       setStudentMediaFiles(mediaUrls);
     } catch (error) {
       console.error('Error fetching student media:', error);
+    }
+  };
+
+  const fetchCertifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('instructor_verifications')
+        .select('*')
+        .eq('instructor_id', student.id)
+        .eq('verification_status', 'verified');
+
+      if (error) {
+        console.error('Error fetching certifications:', error);
+        return;
+      }
+
+      const formattedCerts = data?.map(cert => ({
+        id: cert.id,
+        certification_level: cert.certification_level,
+        certification_agency: cert.certification_agency,
+        certification_number: cert.certification_number,
+        certification_date: cert.verified_at?.split('T')[0],
+        expiration_date: cert.expiration_date
+      })) || [];
+
+      setCertifications(formattedCerts);
+    } catch (error) {
+      console.error('Error fetching certifications:', error);
+    }
+  };
+
+  const fetchMedicalRecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('medical_records')
+        .select('*')
+        .eq('student_id', student.id)
+        .order('recorded_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching medical records:', error);
+        return;
+      }
+
+      setMedicalRecords(data || []);
+    } catch (error) {
+      console.error('Error fetching medical records:', error);
     }
   };
 
@@ -326,9 +448,12 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="h-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Resumen</TabsTrigger>
             <TabsTrigger value="dives">Inmersiones</TabsTrigger>
+            <TabsTrigger value="equipment">Equipamiento</TabsTrigger>
+            <TabsTrigger value="conditions">Condiciones</TabsTrigger>
+            <TabsTrigger value="medical">Médico</TabsTrigger>
             <TabsTrigger value="multimedia">Multimedia</TabsTrigger>
             <TabsTrigger value="progress">Progreso</TabsTrigger>
           </TabsList>
@@ -645,37 +770,354 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
             </ScrollArea>
           </TabsContent>
 
+          <TabsContent value="equipment" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  Equipamiento y Configuración
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-80">
+                  <div className="space-y-4">
+                    {dives.filter(d => selectedDives.includes(d.id)).map((dive) => {
+                      const participant = dive.dive_participants[0];
+                      if (!participant) return null;
+
+                      return (
+                        <Card key={dive.id} className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h4 className="font-medium">{dive.dive_sites?.name}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(dive.dive_date), 'dd MMM yyyy', { locale: es })}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              {participant.equipment_check && (
+                                <Badge variant="outline" className="text-green-600">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Equipo OK
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Mezcla de Gas:</span>
+                                <span className="font-medium">{participant.gas_mix || 'Air'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Presión Inicial:</span>
+                                <span className="font-medium">{participant.tank_pressure_start ? `${participant.tank_pressure_start} bar` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Presión Final:</span>
+                                <span className="font-medium">{participant.tank_pressure_end ? `${participant.tank_pressure_end} bar` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Peso del Lastre:</span>
+                                <span className="font-medium">{participant.ballast_weight ? `${participant.ballast_weight} kg` : 'N/A'}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Grosor Traje:</span>
+                                <span className="font-medium">{participant.wetsuit_thickness ? `${participant.wetsuit_thickness} mm` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Cantidad O2:</span>
+                                <span className="font-medium">{participant.oxygen_amount ? `${participant.oxygen_amount}%` : 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Tiempo de Seguridad:</span>
+                                <span className="font-medium">{participant.safety_stop_time ? `${participant.safety_stop_time} min` : 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="conditions" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Condiciones de Buceo
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-80">
+                  <div className="space-y-4">
+                    {dives.filter(d => selectedDives.includes(d.id)).map((dive) => {
+                      const participant = dive.dive_participants[0];
+                      if (!participant) return null;
+
+                      return (
+                        <Card key={dive.id} className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h4 className="font-medium">{dive.dive_sites?.name}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(dive.dive_date), 'dd MMM yyyy', { locale: es })}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="text-center p-3 bg-muted rounded">
+                              <Thermometer className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                              <p className="text-muted-foreground">Temperatura</p>
+                              <p className="font-bold text-lg">
+                                {participant.water_temperature ? `${participant.water_temperature}°C` : 'N/A'}
+                              </p>
+                            </div>
+                            
+                            <div className="text-center p-3 bg-muted rounded">
+                              <Eye className="h-6 w-6 mx-auto mb-2 text-green-500" />
+                              <p className="text-muted-foreground">Visibilidad</p>
+                              <p className="font-bold text-lg">
+                                {participant.visibility_conditions ? `${participant.visibility_conditions}m` : 'N/A'}
+                              </p>
+                            </div>
+                            
+                            <div className="text-center p-3 bg-muted rounded">
+                              <Wind className="h-6 w-6 mx-auto mb-2 text-orange-500" />
+                              <p className="text-muted-foreground">Corriente</p>
+                              <p className="font-bold text-lg">
+                                {participant.current_strength ? `Nivel ${participant.current_strength}` : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">Condiciones Generales:</span>
+                              <div className="flex gap-2">
+                                {participant.visibility_conditions && participant.visibility_conditions > 15 && (
+                                  <Badge variant="outline" className="text-green-600">Excelente Visibilidad</Badge>
+                                )}
+                                {participant.current_strength === 0 && (
+                                  <Badge variant="outline" className="text-blue-600">Sin Corriente</Badge>
+                                )}
+                                {participant.water_temperature && participant.water_temperature > 25 && (
+                                  <Badge variant="outline" className="text-orange-600">Agua Cálida</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="medical" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Información Médica y Aptitud
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-80">
+                  <div className="space-y-4">
+                    {/* Resumen médico general */}
+                    {medicalRecords.length > 0 && (
+                      <Card className="p-4 bg-green-50 border-green-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Activity className="h-4 w-4 text-green-600" />
+                          <h4 className="font-medium text-green-800">Estado Médico General</h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Último Chequeo:</p>
+                            <p className="font-medium">
+                              {format(new Date(medicalRecords[0].recorded_at), 'dd MMM yyyy', { locale: es })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Apto para Bucear:</p>
+                            <Badge variant={medicalRecords[0].cleared_to_dive ? "default" : "destructive"}>
+                              {medicalRecords[0].cleared_to_dive ? 'Sí' : 'No'}
+                            </Badge>
+                          </div>
+                          {medicalRecords[0].fitness_level && (
+                            <div>
+                              <p className="text-muted-foreground">Nivel de Condición:</p>
+                              <p className="font-medium">{medicalRecords[0].fitness_level}/10</p>
+                            </div>
+                          )}
+                          {medicalRecords[0].heart_rate && (
+                            <div>
+                              <p className="text-muted-foreground">Frecuencia Cardíaca:</p>
+                              <p className="font-medium">{medicalRecords[0].heart_rate} bpm</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {(medicalRecords[0].medical_conditions || medicalRecords[0].allergies || medicalRecords[0].medications) && (
+                          <div className="mt-4 pt-4 border-t border-green-200">
+                            {medicalRecords[0].medical_conditions && (
+                              <div className="mb-2">
+                                <p className="text-sm text-muted-foreground">Condiciones Médicas:</p>
+                                <p className="text-sm">{medicalRecords[0].medical_conditions}</p>
+                              </div>
+                            )}
+                            {medicalRecords[0].allergies && (
+                              <div className="mb-2">
+                                <p className="text-sm text-muted-foreground">Alergias:</p>
+                                <p className="text-sm">{medicalRecords[0].allergies}</p>
+                              </div>
+                            )}
+                            {medicalRecords[0].medications && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Medicamentos:</p>
+                                <p className="text-sm">{medicalRecords[0].medications}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Card>
+                    )}
+
+                    {/* Chequeos médicos por inmersión */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Chequeos Pre-Inmersión</h4>
+                      {dives.filter(d => selectedDives.includes(d.id)).map((dive) => {
+                        const participant = dive.dive_participants[0];
+                        if (!participant) return null;
+
+                        return (
+                          <Card key={dive.id} className="p-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-sm">{dive.dive_sites?.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(dive.dive_date), 'dd MMM yyyy', { locale: es })}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Badge 
+                                  variant={participant.medical_check ? "default" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  {participant.medical_check ? 'Chequeo OK' : 'No verificado'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+
+                    {medicalRecords.length === 0 && (
+                      <div className="text-center py-8">
+                        <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground">No hay registros médicos disponibles</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Los registros médicos aparecerán aquí cuando se realicen chequeos
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="progress" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Evolución del Rendimiento</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Evolución del Rendimiento
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {dives.filter(d => selectedDives.includes(d.id)).map((dive, index) => (
-                    <div key={dive.id} className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <p className="font-medium">{dive.dive_sites?.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(dive.dive_date), 'dd MMM yyyy', { locale: es })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm">
-                          {dive.dive_participants[0]?.depth_achieved || 0}m • {dive.dive_participants[0]?.bottom_time || 0}min
-                        </p>
-                        {dive.dive_participants[0]?.performance_rating && (
-                          <Badge 
-                            variant="outline"
-                            className={getPerformanceColor(dive.dive_participants[0].performance_rating)}
-                          >
-                            Rendimiento: {dive.dive_participants[0].performance_rating}/10
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ScrollArea className="h-80">
+                  <div className="space-y-3">
+                    {dives.filter(d => selectedDives.includes(d.id)).map((dive, index) => {
+                      const participant = dive.dive_participants[0];
+                      if (!participant) return null;
+
+                      // Cálculo de tendencia de profundidad
+                      const depthTrend = index > 0 ? 
+                        (participant.depth_achieved - (dives.filter(d => selectedDives.includes(d.id))[index - 1]?.dive_participants[0]?.depth_achieved || 0)) : 0;
+
+                      return (
+                        <Card key={dive.id} className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{dive.dive_sites?.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(dive.dive_date), 'dd MMM yyyy', { locale: es })}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-sm">
+                                  {participant.depth_achieved || 0}m • {participant.bottom_time || 0}min
+                                </p>
+                                {depthTrend !== 0 && (
+                                  <Badge variant="outline" className={depthTrend > 0 ? "text-green-600" : "text-orange-600"}>
+                                    {depthTrend > 0 ? `+${depthTrend}m` : `${depthTrend}m`}
+                                  </Badge>
+                                )}
+                              </div>
+                              {participant.performance_rating && (
+                                <Badge 
+                                  variant="outline"
+                                  className={getPerformanceColor(participant.performance_rating)}
+                                >
+                                  Rendimiento: {participant.performance_rating}/10
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {participant.skills_completed && (
+                            <div className="mt-3 pt-3 border-t">
+                              <p className="text-xs text-muted-foreground mb-2">Habilidades Completadas:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {Object.entries(participant.skills_completed).map(([skill, completed]) => (
+                                  <Badge 
+                                    key={skill} 
+                                    variant={completed ? "default" : "secondary"}
+                                    className="text-xs"
+                                  >
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {participant.individual_notes && (
+                            <div className="mt-2 p-2 bg-muted rounded">
+                              <p className="text-xs text-muted-foreground">Notas:</p>
+                              <p className="text-xs">{participant.individual_notes}</p>
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </TabsContent>
