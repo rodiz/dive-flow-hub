@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Users, MapPin, Calendar, Clock, Save } from "lucide-react";
+import { Users, MapPin, Calendar, Clock, Save, Search, SortAsc } from "lucide-react";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 interface GroupDiveData {
@@ -32,6 +32,8 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
   const { data: instructorStudents = [] } = useInstructorStudents();
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "alphabetical">("recent");
   
   const [groupDiveData, setGroupDiveData] = useState<GroupDiveData>({
     dive_site_id: '',
@@ -42,6 +44,36 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
     bottom_time: '',
     general_notes: ''
   });
+
+  const filteredAndSortedStudents = useMemo(() => {
+    let filtered = instructorStudents.filter(student => {
+      const studentName = student.profile?.first_name && student.profile?.last_name
+        ? `${student.profile.first_name} ${student.profile.last_name}`
+        : student.student_name || student.student_email || '';
+      
+      return studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             student.student_email.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
+    // Sort students
+    filtered.sort((a, b) => {
+      if (sortBy === "alphabetical") {
+        const nameA = a.profile?.first_name && a.profile?.last_name
+          ? `${a.profile.first_name} ${a.profile.last_name}`
+          : a.student_name || a.student_email || '';
+        const nameB = b.profile?.first_name && b.profile?.last_name
+          ? `${b.profile.first_name} ${b.profile.last_name}`
+          : b.student_name || b.student_email || '';
+        return nameA.localeCompare(nameB);
+      } else {
+        // Sort by most recent (invited_at)
+        return new Date(b.invited_at).getTime() - new Date(a.invited_at).getTime();
+      }
+    });
+
+    // Show only first 6
+    return filtered.slice(0, 6);
+  }, [instructorStudents, searchTerm, sortBy]);
 
   const handleStudentSelection = (studentId: string, checked: boolean) => {
     if (checked) {
@@ -242,38 +274,83 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
             Seleccionar Participantes ({selectedStudents.length} seleccionados)
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filters and Search */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar estudiante..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(value: "recent" | "alphabetical") => setSortBy(value)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Más recientes</SelectItem>
+                <SelectItem value="alphabetical">Orden alfabético</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {instructorStudents.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
+            <p className="text-muted-foreground text-center py-8">
               No tienes estudiantes asignados
             </p>
+          ) : filteredAndSortedStudents.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No se encontraron estudiantes con esos criterios
+            </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {instructorStudents.map((student) => (
-                <div key={student.student_id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                  <Checkbox
-                    id={student.student_id}
-                    checked={selectedStudents.includes(student.student_id)}
-                    onCheckedChange={(checked) => 
-                      handleStudentSelection(student.student_id, checked as boolean)
-                    }
-                  />
-                  <div className="flex-1">
-                    <label 
-                      htmlFor={student.student_id}
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {student.profile?.first_name && student.profile?.last_name
-                        ? `${student.profile.first_name} ${student.profile.last_name}`
-                        : student.student_name || 'Estudiante sin nombre'}
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      {student.student_email}
-                    </p>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {filteredAndSortedStudents.map((student) => (
+                <Card key={student.student_id} className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id={student.student_id}
+                        checked={selectedStudents.includes(student.student_id)}
+                        onCheckedChange={(checked) => 
+                          handleStudentSelection(student.student_id, checked as boolean)
+                        }
+                        className="mt-1"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <label 
+                          htmlFor={student.student_id}
+                          className="text-sm font-medium cursor-pointer block leading-tight"
+                        >
+                          {student.profile?.first_name && student.profile?.last_name
+                            ? `${student.profile.first_name} ${student.profile.last_name}`
+                            : student.student_name || 'Estudiante sin nombre'}
+                        </label>
+                        <p className="text-xs text-muted-foreground truncate mt-1">
+                          {student.student_email}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(student.invited_at).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
+          )}
+          
+          {filteredAndSortedStudents.length >= 6 && instructorStudents.length > 6 && (
+            <p className="text-xs text-muted-foreground text-center">
+              Mostrando los primeros 6 estudiantes. Usa los filtros para refinar la búsqueda.
+            </p>
           )}
         </CardContent>
       </Card>
