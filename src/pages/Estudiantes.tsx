@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye, Search, Filter } from "lucide-react";
+import { Plus, Edit, User, Mail, Award, GraduationCap, Send, FileText, Eye, Search, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { useToast } from "@/hooks/use-toast";
@@ -677,8 +677,8 @@ export default function Estudiantes() {
                           Enviar Reporte
                         </Button>
                         <Button variant="outline" size="sm">
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          WhatsApp
+                          <FileText className="h-4 w-4 mr-2" />
+                          Reportes
                         </Button>
                       </div>
                     </CardContent>
