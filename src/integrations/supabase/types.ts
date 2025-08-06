@@ -25,6 +25,7 @@ export type Database = {
           instructor_id: string
           max_depth_achieved: number | null
           multimedia_urls: Json | null
+          pdf_url: string | null
           qr_code_url: string | null
           report_data: Json
           skills_assessment: Json | null
@@ -43,6 +44,7 @@ export type Database = {
           instructor_id: string
           max_depth_achieved?: number | null
           multimedia_urls?: Json | null
+          pdf_url?: string | null
           qr_code_url?: string | null
           report_data?: Json
           skills_assessment?: Json | null
@@ -61,6 +63,7 @@ export type Database = {
           instructor_id?: string
           max_depth_achieved?: number | null
           multimedia_urls?: Json | null
+          pdf_url?: string | null
           qr_code_url?: string | null
           report_data?: Json
           skills_assessment?: Json | null
