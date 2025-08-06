@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { Users, MapPin, Calendar, Clock, Save, Search, SortAsc } from "lucide-react";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
@@ -34,6 +36,8 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "alphabetical">("recent");
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 6;
   
   const [groupDiveData, setGroupDiveData] = useState<GroupDiveData>({
     dive_site_id: '',
@@ -71,9 +75,13 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
       }
     });
 
-    // Show only first 6
-    return filtered.slice(0, 6);
+    return filtered;
   }, [instructorStudents, searchTerm, sortBy]);
+
+  const totalPages = Math.ceil(filteredAndSortedStudents.length / studentsPerPage);
+  const startIndex = (currentPage - 1) * studentsPerPage;
+  const endIndex = startIndex + studentsPerPage;
+  const currentStudents = filteredAndSortedStudents.slice(startIndex, endIndex);
 
   const handleStudentSelection = (studentId: string, checked: boolean) => {
     if (checked) {
@@ -307,50 +315,91 @@ export const GroupDiveCreator = ({ diveSites, onSuccess }: GroupDiveCreatorProps
               No se encontraron estudiantes con esos criterios
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {filteredAndSortedStudents.map((student) => (
-                <Card key={student.student_id} className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id={student.student_id}
-                        checked={selectedStudents.includes(student.student_id)}
-                        onCheckedChange={(checked) => 
-                          handleStudentSelection(student.student_id, checked as boolean)
-                        }
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <label 
-                          htmlFor={student.student_id}
-                          className="text-sm font-medium cursor-pointer block leading-tight"
-                        >
-                          {student.profile?.first_name && student.profile?.last_name
-                            ? `${student.profile.first_name} ${student.profile.last_name}`
-                            : student.student_name || 'Estudiante sin nombre'}
-                        </label>
-                        <p className="text-xs text-muted-foreground truncate mt-1">
-                          {student.student_email}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(student.invited_at).toLocaleDateString('es-ES', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: '2-digit'
-                          })}
-                        </p>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {currentStudents.map((student) => (
+                  <Card key={student.student_id} className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id={student.student_id}
+                          checked={selectedStudents.includes(student.student_id)}
+                          onCheckedChange={(checked) => 
+                            handleStudentSelection(student.student_id, checked as boolean)
+                          }
+                          className="mt-1"
+                        />
+                        <Avatar className="h-8 w-8 mt-0.5">
+                          <AvatarImage 
+                            src={student.profile?.avatar_url || undefined} 
+                            alt={student.profile?.first_name || student.student_name || 'Avatar'} 
+                          />
+                          <AvatarFallback className="text-xs">
+                            {student.profile?.first_name && student.profile?.last_name
+                              ? `${student.profile.first_name[0]}${student.profile.last_name[0]}`
+                              : student.student_name?.[0] || student.student_email?.[0] || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <label 
+                            htmlFor={student.student_id}
+                            className="text-sm font-medium cursor-pointer block leading-tight"
+                          >
+                            {student.profile?.first_name && student.profile?.last_name
+                              ? `${student.profile.first_name} ${student.profile.last_name}`
+                              : student.student_name || 'Estudiante sin nombre'}
+                          </label>
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {student.student_email}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(student.invited_at).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: '2-digit'
+                            })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-          
-          {filteredAndSortedStudents.length >= 6 && instructorStudents.length > 6 && (
-            <p className="text-xs text-muted-foreground text-center">
-              Mostrando los primeros 6 estudiantes. Usa los filtros para refinar la búsqueda.
-            </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              {totalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i + 1}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(i + 1)}
+                          isActive={currentPage === i + 1}
+                          className="cursor-pointer"
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              
+              <div className="text-xs text-muted-foreground text-center">
+                Mostrando {startIndex + 1}-{Math.min(endIndex, filteredAndSortedStudents.length)} de {filteredAndSortedStudents.length} estudiantes
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
