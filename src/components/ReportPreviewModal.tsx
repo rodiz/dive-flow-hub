@@ -25,6 +25,13 @@ interface DiveData {
   }>;
   photos: string[];
   videos: string[];
+  instructor?: {
+    first_name: string;
+    last_name: string;
+  };
+  diving_center?: {
+    name: string;
+  };
 }
 
 interface ReportPreviewModalProps {
@@ -39,7 +46,7 @@ interface ReportPreviewModalProps {
   };
   dives: DiveData[];
   selectedDives: string[];
-  studentMediaFiles: string[];
+  studentMediaFiles: { url: string; name: string; type: 'image' | 'video' }[];
 }
 
 export function ReportPreviewModal({ 
@@ -107,7 +114,7 @@ export function ReportPreviewModal({
                     <p><span className="font-medium">Inmersiones:</span> {stats.totalDives}</p>
                     <p><span className="font-medium">Tiempo total:</span> {stats.totalBottomTime} min</p>
                     <p><span className="font-medium">Profundidad máx:</span> {stats.maxDepth} m</p>
-                    <p><span className="font-medium">Multimedia:</span> {studentMediaFiles.length} archivos</p>
+                    <p><span className="font-medium">Multimedia:</span> {studentMediaFiles.length} archivos ({studentMediaFiles.filter(f => f.type === 'image').length} imágenes, {studentMediaFiles.filter(f => f.type === 'video').length} videos)</p>
                   </div>
                 </div>
               </div>
@@ -173,7 +180,7 @@ export function ReportPreviewModal({
               </div>
               
               <div className="flex-1 border rounded-lg overflow-hidden">
-                <PDFViewer width="100%" height="100%">
+                <PDFViewer width="100%" height="100%" showToolbar={false}>
                   {reportDocument}
                 </PDFViewer>
               </div>

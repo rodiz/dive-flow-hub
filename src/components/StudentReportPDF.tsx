@@ -23,6 +23,13 @@ interface DiveData {
   }>;
   photos: string[];
   videos: string[];
+  instructor?: {
+    first_name: string;
+    last_name: string;
+  };
+  diving_center?: {
+    name: string;
+  };
 }
 
 interface StudentReportPDFProps {
@@ -35,7 +42,7 @@ interface StudentReportPDFProps {
   };
   dives: DiveData[];
   selectedDives: string[];
-  studentMediaFiles: string[];
+  studentMediaFiles: { url: string; name: string; type: 'image' | 'video' }[];
   stats: {
     totalDives: number;
     totalBottomTime: number;
@@ -297,16 +304,58 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
                   Notas: {dive.dive_participants[0].individual_notes}
                 </Text>
               )}
+
+              {/* Multimedia URLs for this dive */}
+              {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) > 0 && (
+                <View style={{ marginTop: 5 }}>
+                  <Text style={[styles.diveNotes, { fontStyle: 'normal', fontWeight: 'bold' }]}>
+                    Multimedia de esta inmersión:
+                  </Text>
+                  {[...(dive.photos || []), ...(dive.videos || []), ...(dive.dive_participants[0]?.images || []), ...(dive.dive_participants[0]?.videos || [])].slice(0, 3).map((url, idx) => (
+                    <Text key={idx} style={[styles.diveNotes, { fontSize: 8 }]}>
+                      • {url}
+                    </Text>
+                  ))}
+                  {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) > 3 && (
+                    <Text style={[styles.diveNotes, { fontSize: 8 }]}>
+                      ... y {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) - 3} archivos más
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
           ))}
         </View>
+
+        {/* Instructor and Center Information */}
+        {selectedDiveData.length > 0 && (selectedDiveData[0].instructor || selectedDiveData[0].diving_center) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Información del Instructor y Centro</Text>
+            {selectedDiveData[0].instructor && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Instructor:</Text>
+                <Text style={styles.value}>
+                  {selectedDiveData[0].instructor.first_name} {selectedDiveData[0].instructor.last_name}
+                </Text>
+              </View>
+            )}
+            {selectedDiveData[0].diving_center && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Centro de Buceo:</Text>
+                <Text style={styles.value}>{selectedDiveData[0].diving_center.name}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Multimedia Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Multimedia</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>Archivos del estudiante:</Text>
-            <Text style={styles.value}>{studentMediaFiles.length} archivo(s)</Text>
+            <Text style={styles.label}>Archivos generales del estudiante:</Text>
+            <Text style={styles.value}>
+              {studentMediaFiles.length} archivo(s) - {studentMediaFiles.filter(f => f.type === 'image').length} imágenes, {studentMediaFiles.filter(f => f.type === 'video').length} videos
+            </Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Multimedia de inmersiones:</Text>
@@ -318,6 +367,25 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
               )} archivo(s)
             </Text>
           </View>
+          
+          {/* Multimedia URLs */}
+          {studentMediaFiles.length > 0 && (
+            <View style={{ marginTop: 10 }}>
+              <Text style={[styles.label, { marginBottom: 5 }]}>Enlaces de Multimedia del Estudiante:</Text>
+              {studentMediaFiles.slice(0, 10).map((media, index) => (
+                <View key={index} style={styles.row}>
+                  <Text style={[styles.value, { fontSize: 9 }]}>
+                    {index + 1}. {media.name} ({media.type}) - {media.url}
+                  </Text>
+                </View>
+              ))}
+              {studentMediaFiles.length > 10 && (
+                <Text style={[styles.value, { fontSize: 9, fontStyle: 'italic' }]}>
+                  ... y {studentMediaFiles.length - 10} archivos más
+                </Text>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Footer */}

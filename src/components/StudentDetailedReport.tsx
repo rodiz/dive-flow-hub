@@ -61,6 +61,13 @@ interface DiveData {
   }>;
   photos: string[];
   videos: string[];
+  instructor?: {
+    first_name: string;
+    last_name: string;
+  };
+  diving_center?: {
+    name: string;
+  };
 }
 
 export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetailedReportProps) {
@@ -69,7 +76,7 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [studentMediaFiles, setStudentMediaFiles] = useState<string[]>([]);
+  const [studentMediaFiles, setStudentMediaFiles] = useState<{ url: string; name: string; type: 'image' | 'video' }[]>([]);
   const [showReportPreview, setShowReportPreview] = useState(false);
   const { toast } = useToast();
 
@@ -101,9 +108,14 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
             bottom_time,
             photos,
             videos,
+            instructor_id,
             dive_sites (
               name,
               location
+            ),
+            profiles!instructor_id (
+              first_name,
+              last_name
             )
           )
         `)
@@ -129,7 +141,11 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           videos: participant.videos || []
         }],
         photos: participant.dives.photos || [],
-        videos: participant.dives.videos || []
+        videos: participant.dives.videos || [],
+        instructor: participant.dives.profiles ? {
+          first_name: participant.dives.profiles.first_name,
+          last_name: participant.dives.profiles.last_name
+        } : undefined
       })) || [];
 
       // Sort by date descending
@@ -163,8 +179,16 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
         const { data: urlData } = supabase.storage
           .from('student-multimedia')
           .getPublicUrl(`${student.id}/${file.name}`);
-        return urlData.publicUrl;
-      }) || [];
+        
+        const isVideo = file.name.toLowerCase().match(/\.(mp4|mov|avi|mkv|webm)$/);
+        const isImage = file.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/);
+        
+        return {
+          url: urlData.publicUrl,
+          name: file.name,
+          type: isVideo ? 'video' as const : 'image' as const
+        };
+      }).filter(item => item.type) || [];
 
       setStudentMediaFiles(mediaUrls);
     } catch (error) {
@@ -502,19 +526,19 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-3 gap-3">
-                        {studentMediaFiles.map((mediaUrl, idx) => (
+                        {studentMediaFiles.map((media, idx) => (
                           <div key={idx} className="relative group">
                             <div className="aspect-square bg-muted rounded overflow-hidden">
-                              {mediaUrl.includes('video') || mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                              {media.type === 'video' ? (
                                 <video 
-                                  src={mediaUrl} 
+                                  src={media.url} 
                                   className="w-full h-full object-cover"
                                   controls
                                 />
                               ) : (
                                 <img 
-                                  src={mediaUrl} 
-                                  alt={`Multimedia ${idx + 1}`}
+                                  src={media.url} 
+                                  alt={media.name}
                                   className="w-full h-full object-cover"
                                 />
                               )}
@@ -523,7 +547,7 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                               variant="destructive"
                               size="sm"
                               className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleDeleteMedia(mediaUrl)}
+                              onClick={() => handleDeleteMedia(media.url)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
