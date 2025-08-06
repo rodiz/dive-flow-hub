@@ -436,7 +436,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
 
   const StatCard = ({ icon, value, label, color }: { icon: string, value: string, label: string, color: string }) => (
     <View style={[styles.statBox, { borderLeft: `4 solid ${color}`, minHeight: 60 }]}>
-      <Text style={[styles.statValue, { color }]}>{icon} {value}</Text>
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -452,31 +452,31 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
         {/* Header con diseño mejorado */}
         <View style={styles.header}>
           <Text style={styles.title}>
-            📊 REPORTE DE PROGRESO PROFESIONAL
+            REPORTE DE PROGRESO PROFESIONAL
           </Text>
           <Text style={styles.subtitle}>
             {student.first_name} {student.last_name}
           </Text>
           <Text style={styles.subtitle}>
-            📅 Generado el {currentDate}
+            Generado el {currentDate}
           </Text>
         </View>
 
-        {/* Información del Estudiante con iconos */}
+        {/* Información del Estudiante */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👤 INFORMACIÓN DEL ESTUDIANTE</Text>
+          <Text style={styles.sectionTitle}>INFORMACION DEL ESTUDIANTE</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>📧 Email:</Text>
+            <Text style={styles.label}>Email:</Text>
             <Text style={styles.value}>{student.email}</Text>
           </View>
           {student.certification_level && (
             <View style={styles.row}>
-              <Text style={styles.label}>🏆 Certificación:</Text>
+              <Text style={styles.label}>Certificacion:</Text>
               <Text style={styles.value}>{student.certification_level}</Text>
             </View>
           )}
           <View style={styles.row}>
-            <Text style={styles.label}>📊 Período:</Text>
+            <Text style={styles.label}>Periodo:</Text>
             <Text style={styles.value}>
               {selectedDiveData.length > 0 ? 
                 `${format(new Date(selectedDiveData[selectedDiveData.length - 1]?.dive_date), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(selectedDiveData[0]?.dive_date), 'dd/MM/yyyy', { locale: es })}` 
@@ -485,30 +485,30 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
           </View>
         </View>
 
-        {/* Estadísticas principales con mejor diseño */}
+        {/* Estadísticas principales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📈 ESTADÍSTICAS PRINCIPALES</Text>
+          <Text style={styles.sectionTitle}>ESTADISTICAS PRINCIPALES</Text>
           <View style={styles.statsGrid}>
             <StatCard 
-              icon="🏊‍♂️" 
+              icon="" 
               value={stats.totalDives.toString()} 
               label="Total Inmersiones" 
               color="#0ea5e9" 
             />
             <StatCard 
-              icon="⏱️" 
+              icon="" 
               value={`${(stats.totalBottomTime / 60).toFixed(1)}h`} 
               label="Experiencia Total" 
               color="#22c55e" 
             />
             <StatCard 
-              icon="📏" 
+              icon="" 
               value={`${stats.maxDepth}m`} 
-              label="Profundidad Máxima" 
+              label="Profundidad Maxima" 
               color="#f59e0b" 
             />
             <StatCard 
-              icon="⭐" 
+              icon="" 
               value={`${stats.avgPerformance.toFixed(1)}/5`} 
               label="Rendimiento Promedio" 
               color={getPerformanceColor(stats.avgPerformance)} 
@@ -518,30 +518,30 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
 
         {/* Indicadores de progreso visual */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 INDICADORES DE PROGRESO</Text>
+          <Text style={styles.sectionTitle}>INDICADORES DE PROGRESO</Text>
           <ProgressBar 
             value={analysis.safetyCompliance} 
             max={100} 
-            label="🛡️ Cumplimiento de Seguridad (%)" 
+            label="Cumplimiento de Seguridad (%)" 
             color="#22c55e" 
           />
           <ProgressBar 
             value={analysis.equipmentCompliance} 
             max={100} 
-            label="⚙️ Chequeos de Equipamiento (%)" 
+            label="Chequeos de Equipamiento (%)" 
             color="#0ea5e9" 
           />
           <ProgressBar 
             value={stats.avgPerformance} 
             max={5} 
-            label="⭐ Rendimiento Promedio" 
+            label="Rendimiento Promedio" 
             color="#f59e0b" 
           />
         </View>
 
         {/* Análisis Avanzado */}
         <View style={styles.analysisContainer}>
-          <Text style={styles.analysisTitle}>🔍 ANÁLISIS DETALLADO DE PROGRESO</Text>
+          <Text style={styles.analysisTitle}>ANALISIS DETALLADO DE PROGRESO</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{analysis.avgDepth}m</Text>
@@ -584,7 +584,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
         {/* Habilidades Desarrolladas */}
         {Object.keys(skillsAnalysis).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🎯 HABILIDADES DESARROLLADAS</Text>
+            <Text style={styles.sectionTitle}>HABILIDADES DESARROLLADAS</Text>
             <View style={styles.skillsGrid}>
               {Object.entries(skillsAnalysis).map(([skill, data]: [string, any]) => (
                 <View key={skill} style={styles.skillBadge}>
@@ -599,7 +599,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
 
         {/* Recomendaciones Profesionales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💡 RECOMENDACIONES PROFESIONALES</Text>
+          <Text style={styles.sectionTitle}>RECOMENDACIONES PROFESIONALES</Text>
           {recommendations.map((rec, index) => (
             <View key={index} style={styles.recommendationBox}>
               <Text style={styles.recommendationTitle}>
@@ -625,7 +625,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
         {/* Inmersiones Detalladas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            🤿 REGISTRO DE INMERSIONES ({selectedDiveData.length})
+            REGISTRO DE INMERSIONES ({selectedDiveData.length})
           </Text>
           
           {selectedDiveData.map((dive) => (
@@ -697,7 +697,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
         {/* Información del Instructor */}
         {selectedDiveData.length > 0 && selectedDiveData[0].instructor && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>👨‍🏫 INFORMACIÓN DEL INSTRUCTOR</Text>
+            <Text style={styles.sectionTitle}>INFORMACION DEL INSTRUCTOR</Text>
             <View style={styles.row}>
               <Text style={styles.label}>Instructor:</Text>
               <Text style={styles.value}>
@@ -715,7 +715,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
 
         {/* Multimedia */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📷 MULTIMEDIA ADJUNTA</Text>
+          <Text style={styles.sectionTitle}>MULTIMEDIA ADJUNTA</Text>
           <View style={styles.row}>
             <Text style={styles.label}>Archivos Generales:</Text>
             <Text style={styles.value}>
@@ -723,9 +723,13 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
             </Text>
           </View>
           
+          <Text style={{ fontSize: 9, color: '#374151', marginBottom: 6 }}>
+            Ver multimedia completa en: https://app.lovable.app/estudiantes
+          </Text>
+          
           {studentMediaFiles.slice(0, 5).map((file, idx) => (
             <Text key={idx} style={{ fontSize: 8, color: '#64748b', marginLeft: 120, marginBottom: 2 }}>
-              • {file.name}
+              • {file.name} - {file.type === 'image' ? 'Imagen' : 'Video'}
             </Text>
           ))}
           
