@@ -303,17 +303,17 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
   };
 
   const getPerformanceColor = (rating: number) => {
-    if (rating >= 8) return '#059669';
-    if (rating >= 6) return '#d97706';
+    if (rating >= 4) return '#059669';
+    if (rating >= 3) return '#d97706';
     return '#dc2626';
   };
 
   const getPerformanceText = (rating: number) => {
-    if (rating >= 9) return 'Excelente';
-    if (rating >= 8) return 'Muy Bueno';
-    if (rating >= 7) return 'Bueno';
-    if (rating >= 6) return 'Satisfactorio';
-    if (rating >= 5) return 'Regular';
+    if (rating >= 5) return 'Excelente';
+    if (rating >= 4) return 'Muy Bueno';
+    if (rating >= 3) return 'Bueno';
+    if (rating >= 2) return 'Satisfactorio';
+    if (rating >= 1) return 'Regular';
     return 'Necesita Mejora';
   };
 
@@ -505,9 +505,9 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         {/* Rendimiento */}
         {participant.performance_rating && (
           <View style={styles.performanceBox}>
-            <Text style={styles.performanceTitle}>🏆 EVALUACIÓN DEL RENDIMIENTO</Text>
+            <Text style={styles.performanceTitle}>EVALUACIÓN DEL RENDIMIENTO</Text>
             <Text style={[styles.performanceRating, { color: getPerformanceColor(participant.performance_rating) }]}>
-              {participant.performance_rating}/10
+              {participant.performance_rating}/5
             </Text>
             <Text style={styles.performanceDesc}>
               {getPerformanceText(participant.performance_rating)}
@@ -541,7 +541,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         {/* Multimedia */}
         {studentMediaFiles.length > 0 && (
           <View style={styles.mediaSection}>
-            <Text style={styles.mediaTitle}>📷 MULTIMEDIA DE LA INMERSIÓN</Text>
+            <Text style={styles.mediaTitle}>MULTIMEDIA DE LA INMERSIÓN</Text>
             <Text style={styles.mediaCount}>
               Total de archivos: {studentMediaFiles.length}
             </Text>
@@ -550,6 +550,9 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
             </Text>
             <Text style={styles.mediaCount}>
               Videos: {studentMediaFiles.filter(f => f.type === 'video').length}
+            </Text>
+            <Text style={styles.mediaCount}>
+              Ver multimedia completa en: https://app.lovable.app/estudiantes
             </Text>
           </View>
         )}

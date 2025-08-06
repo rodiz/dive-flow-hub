@@ -430,17 +430,24 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   };
 
   const getPerformanceColor = (rating: number) => {
-    if (rating >= 8) return "text-green-600";
-    if (rating >= 6) return "text-yellow-600";
+    if (rating >= 4) return "text-green-600";
+    if (rating >= 3) return "text-yellow-600";
     return "text-red-600";
   };
 
   const getTotalStats = () => {
-    const selectedDiveData = dives.filter(d => selectedDives.includes(d.id));
+    // For single dive reports, use only the selected dive
+    let selectedDiveData;
+    if (reportType === 'single' && singleDiveId) {
+      selectedDiveData = dives.filter(d => d.id === singleDiveId);
+    } else {
+      selectedDiveData = dives.filter(d => selectedDives.includes(d.id));
+    }
+    
     return {
       totalDives: selectedDiveData.length,
       totalBottomTime: selectedDiveData.reduce((sum, d) => sum + (d.dive_participants[0]?.bottom_time || 0), 0),
-      maxDepth: Math.max(...selectedDiveData.map(d => d.dive_participants[0]?.depth_achieved || 0)),
+      maxDepth: selectedDiveData.length > 0 ? Math.max(...selectedDiveData.map(d => d.dive_participants[0]?.depth_achieved || 0)) : 0,
       avgPerformance: selectedDiveData.length > 0 
         ? selectedDiveData.reduce((sum, d) => sum + (d.dive_participants[0]?.performance_rating || 0), 0) / selectedDiveData.length
         : 0
@@ -1161,14 +1168,14 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                                     </Badge>
                                   )}
                                 </div>
-                                {participant.performance_rating && (
-                                  <Badge 
-                                    variant="outline"
-                                    className={getPerformanceColor(participant.performance_rating)}
-                                  >
-                                    Rendimiento: {participant.performance_rating}/5
-                                  </Badge>
-                                )}
+                                 {participant.performance_rating && (
+                                   <Badge 
+                                     variant="outline"
+                                     className={getPerformanceColor(participant.performance_rating)}
+                                   >
+                                     Rendimiento: {participant.performance_rating}/5
+                                   </Badge>
+                                 )}
                               </div>
                             </div>
                             
