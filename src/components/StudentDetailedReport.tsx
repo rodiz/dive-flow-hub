@@ -625,24 +625,6 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
               <h3 className="text-lg font-semibold">
                 {reportType === 'historical' ? 'Inmersiones del Estudiante' : 'Seleccionar Inmersión para el Reporte'}
               </h3>
-              {reportType === 'historical' && (
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSelectedDives(dives.map(d => d.id))}
-                  >
-                    Seleccionar Todas
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSelectedDives([])}
-                  >
-                    Limpiar Selección
-                  </Button>
-                </div>
-              )}
             </div>
 
             <ScrollArea className="h-96">
@@ -655,12 +637,6 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                   dives.map((dive) => (
                     <Card key={dive.id} className="p-4">
                       <div className="flex items-start gap-3">
-                        {reportType === 'historical' && (
-                          <Checkbox 
-                            checked={selectedDives.includes(dive.id)}
-                            onCheckedChange={(checked) => handleDiveSelection(dive.id, checked as boolean)}
-                          />
-                        )}
                         {reportType === 'single' && (
                           <div className="flex items-center space-x-2">
                             <input
