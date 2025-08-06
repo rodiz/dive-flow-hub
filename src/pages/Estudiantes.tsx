@@ -14,6 +14,7 @@ import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { InstructorManagementForCenter } from "@/components/InstructorManagementForCenter";
+import { StudentDetailedReport } from "@/components/StudentDetailedReport";
 
 export default function Estudiantes() {
   const { user, userProfile } = useAuth();
@@ -32,6 +33,8 @@ export default function Estudiantes() {
     start_date: '',
     enrollment_status: 'active'
   });
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [showDetailedReport, setShowDetailedReport] = useState(false);
 
   // Use the unified students hook
   const { data: instructorStudents = [], refetch: refetchStudents } = useInstructorStudents();
@@ -546,7 +549,20 @@ export default function Estudiantes() {
                       
                       {/* Botones de acción */}
                       <div className="flex gap-2 mt-4 pt-4 border-t">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedStudent({
+                              id: studentRel.student_id || studentRel.profile?.user_id,
+                              first_name: studentRel.profile?.first_name || studentRel.student_name?.split(' ')[0],
+                              last_name: studentRel.profile?.last_name || studentRel.student_name?.split(' ').slice(1).join(' '),
+                              email: studentRel.profile?.email || studentRel.student_email,
+                              certification_level: studentRel.profile?.certification_level
+                            });
+                            setShowDetailedReport(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalles
                         </Button>
@@ -646,6 +662,18 @@ export default function Estudiantes() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Student Detailed Report Modal */}
+        {selectedStudent && (
+          <StudentDetailedReport
+            isOpen={showDetailedReport}
+            onClose={() => {
+              setShowDetailedReport(false);
+              setSelectedStudent(null);
+            }}
+            student={selectedStudent}
+          />
+        )}
       </div>
     </div>
   );
