@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { InstructorStudent } from "@/hooks/useInstructorStudents";
-import { Users, BookOpen, Waves, User } from "lucide-react";
+import { Users, BookOpen, Waves, User, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface StudentStatsChartProps {
   students: InstructorStudent[];
@@ -17,6 +19,9 @@ interface StudentStats {
 }
 
 export const StudentStatsChart = ({ students }: StudentStatsChartProps) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 12; // 2 rows x 6 columns
+  
   const { data: studentStats, isLoading } = useQuery({
     queryKey: ['student-stats', students.map(s => s.student_id)],
     queryFn: async () => {
@@ -59,11 +64,11 @@ export const StudentStatsChart = ({ students }: StudentStatsChartProps) => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[...Array(12)].map((_, i) => (
+          <Card key={i} className="animate-pulse h-48">
             <CardContent className="p-4">
-              <div className="h-20 bg-muted rounded"></div>
+              <div className="h-40 bg-muted rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -81,76 +86,145 @@ export const StudentStatsChart = ({ students }: StudentStatsChartProps) => {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {students.map((student) => {
-        const stats = studentStats?.find(s => s.student_id === student.student_id);
-        const studentName = student.student_name || 
-          (student.profile?.first_name && student.profile?.last_name 
-            ? `${student.profile.first_name} ${student.profile.last_name}`
-            : student.student_email);
+  // Calculate pagination
+  const totalPages = Math.ceil(students.length / studentsPerPage);
+  const startIndex = (currentPage - 1) * studentsPerPage;
+  const endIndex = startIndex + studentsPerPage;
+  const currentStudents = students.slice(startIndex, endIndex);
 
-        return (
-          <Card key={student.id} className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5"></div>
-            <CardHeader className="relative pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <CardTitle className="text-sm font-medium truncate">
-                    {studentName}
-                  </CardTitle>
-                </div>
-                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
-                  Activo
-                </Badge>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="relative pt-0 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-card/50 rounded-lg p-2 text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <Waves className="h-3 w-3 text-primary mr-1" />
-                    <span className="text-xs text-muted-foreground">Inmersiones</span>
-                  </div>
-                  <div className="text-lg font-bold text-primary">
-                    {stats?.total_dives || 0}
-                  </div>
-                </div>
-                
-                <div className="bg-card/50 rounded-lg p-2 text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <BookOpen className="h-3 w-3 text-secondary mr-1" />
-                    <span className="text-xs text-muted-foreground">Cursos</span>
-                  </div>
-                  <div className="text-lg font-bold text-secondary">
-                    {stats?.total_courses || 0}
-                  </div>
-                </div>
-              </div>
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Student cards grid - 2 rows x 6 columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {currentStudents.map((student) => {
+          const stats = studentStats?.find(s => s.student_id === student.student_id);
+          const studentName = student.student_name || 
+            (student.profile?.first_name && student.profile?.last_name 
+              ? `${student.profile.first_name} ${student.profile.last_name}`
+              : student.student_email);
+
+          return (
+            <Card key={student.id} className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 h-64 flex flex-col">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5"></div>
               
-              {stats?.active_courses ? (
-                <div className="text-center">
-                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                    {stats.active_courses} curso{stats.active_courses > 1 ? 's' : ''} activo{stats.active_courses > 1 ? 's' : ''}
+              {/* Header - Avatar and Status */}
+              <CardHeader className="relative pb-3 flex-shrink-0">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+                    <User className="h-6 w-6 text-white" />
+                  </div>
+                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
+                    Activo
                   </Badge>
                 </div>
-              ) : null}
+              </CardHeader>
               
-              <div className="text-xs text-muted-foreground text-center pt-1 border-t border-border/50">
-                Agregado: {new Date(student.invited_at).toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: '2-digit'
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+              {/* Content - Name and Stats */}
+              <CardContent className="relative pt-0 flex-1 flex flex-col space-y-3">
+                <CardTitle className="text-sm font-medium text-center line-clamp-2 leading-tight">
+                  {studentName}
+                </CardTitle>
+                
+                <div className="flex-1 space-y-3">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="bg-card/50 rounded-lg p-2 text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <Waves className="h-3 w-3 text-primary mr-1" />
+                        <span className="text-xs text-muted-foreground">Inmersiones</span>
+                      </div>
+                      <div className="text-lg font-bold text-primary">
+                        {stats?.total_dives || 0}
+                      </div>
+                    </div>
+                    
+                    <div className="bg-card/50 rounded-lg p-2 text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <BookOpen className="h-3 w-3 text-secondary mr-1" />
+                        <span className="text-xs text-muted-foreground">Cursos</span>
+                      </div>
+                      <div className="text-lg font-bold text-secondary">
+                        {stats?.total_courses || 0}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {stats?.active_courses ? (
+                    <div className="text-center">
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        {stats.active_courses} activo{stats.active_courses > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  ) : null}
+                </div>
+                
+                {/* Footer - Date */}
+                <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
+                  {new Date(student.invited_at).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit'
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {startIndex + 1}-{Math.min(endIndex, students.length)} de {students.length} estudiantes
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+              className="flex items-center space-x-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Anterior</span>
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+              className="flex items-center space-x-1"
+            >
+              <span>Siguiente</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
