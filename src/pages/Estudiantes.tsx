@@ -309,34 +309,82 @@ export default function Estudiantes() {
   };
 
   const fetchStudentReports = async (studentId: string) => {
-    // For now, use a mock data since the table doesn't exist yet
-    // This would be replaced with actual database query when the table is created
-    const mockReports = [
-      {
-        id: '1',
-        created_at: new Date().toISOString(),
-        report_type: 'progreso',
-        instructor_name: userProfile?.first_name + ' ' + userProfile?.last_name,
-        content: 'Reporte de progreso del estudiante'
-      },
-      {
-        id: '2', 
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        report_type: 'evaluacion',
-        instructor_name: userProfile?.first_name + ' ' + userProfile?.last_name,
-        content: 'Evaluación de habilidades'
+    try {
+      // First get the reports
+      const { data: reports, error: reportsError } = await supabase
+        .from('course_completion_reports')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false });
+
+      if (reportsError) throw reportsError;
+
+      if (!reports || reports.length === 0) {
+        setStudentReports([]);
+        return;
       }
-    ];
-    setStudentReports(mockReports);
+
+      // Get instructor profiles for the reports
+      const instructorIds = [...new Set(reports.map(r => r.instructor_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', instructorIds);
+
+      if (profilesError) {
+        console.error('Error fetching instructor profiles:', profilesError);
+      }
+
+      // Create a map of instructor profiles
+      const profileMap = (profiles || []).reduce((acc, profile) => {
+        acc[profile.user_id] = profile;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Transform the data to match the expected format
+      const formattedReports = reports.map(report => {
+        const instructorProfile = profileMap[report.instructor_id];
+        return {
+          id: report.id,
+          created_at: report.created_at,
+          report_type: 'completion',
+          instructor_name: instructorProfile 
+            ? `${instructorProfile.first_name || ''} ${instructorProfile.last_name || ''}`.trim()
+            : 'Instructor no encontrado',
+          content: 'Reporte de finalización de curso',
+          report_data: report.report_data
+        };
+      });
+
+      setStudentReports(formattedReports);
+    } catch (error) {
+      console.error('Error fetching student reports:', error);
+      setStudentReports([]);
+    }
   };
 
   const deleteReport = async (reportId: string) => {
-    // Mock delete functionality
-    setStudentReports(prev => prev.filter(report => report.id !== reportId));
-    toast({
-      title: "Reporte eliminado",
-      description: "El reporte ha sido eliminado exitosamente",
-    });
+    try {
+      const { error } = await supabase
+        .from('course_completion_reports')
+        .delete()
+        .eq('id', reportId);
+
+      if (error) throw error;
+
+      setStudentReports(prev => prev.filter(report => report.id !== reportId));
+      toast({
+        title: "Reporte eliminado",
+        description: "El reporte ha sido eliminado exitosamente",
+      });
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el reporte",
+        variant: "destructive",
+      });
+    }
   };
 
   const sendToWhatsApp = (report: any) => {
