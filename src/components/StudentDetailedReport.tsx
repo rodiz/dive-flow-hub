@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ReportPreviewModal } from "./ReportPreviewModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,7 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [studentMediaFiles, setStudentMediaFiles] = useState<string[]>([]);
+  const [showReportPreview, setShowReportPreview] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -258,44 +260,8 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
       return;
     }
 
-    setGenerating(true);
-    try {
-      // Find the enrollment for this student
-      const { data: enrollment } = await supabase
-        .from('course_enrollments')
-        .select('id')
-        .eq('student_id', student.id)
-        .single();
-
-      if (!enrollment) {
-        throw new Error('No se encontró inscripción para este estudiante');
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-student-report', {
-        body: {
-          enrollmentId: enrollment.id,
-          selectedDiveIds: selectedDives
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Reporte generado",
-        description: "El reporte ha sido generado exitosamente",
-      });
-
-      onClose();
-    } catch (error: any) {
-      console.error('Error generating report:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Error al generar el reporte",
-        variant: "destructive",
-      });
-    } finally {
-      setGenerating(false);
-    }
+    // Show the preview modal instead of directly generating
+    setShowReportPreview(true);
   };
 
   const getPerformanceColor = (rating: number) => {
@@ -701,20 +667,24 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
             </Button>
             <Button 
               onClick={generateReport}
-              disabled={generating || selectedDives.length === 0}
+              disabled={selectedDives.length === 0}
               className="bg-gradient-ocean"
             >
-              {generating ? (
-                <>Generando...</>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Generar Reporte
-                </>
-              )}
+              <Send className="h-4 w-4 mr-2" />
+              Generar Reporte
             </Button>
           </div>
         </div>
+
+        {/* Report Preview Modal */}
+        <ReportPreviewModal
+          isOpen={showReportPreview}
+          onClose={() => setShowReportPreview(false)}
+          student={student}
+          dives={dives}
+          selectedDives={selectedDives}
+          studentMediaFiles={studentMediaFiles}
+        />
       </DialogContent>
     </Dialog>
   );
