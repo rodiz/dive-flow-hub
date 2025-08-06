@@ -270,12 +270,12 @@ export function ReportPreviewModal({
               
               <div className="flex-1 border rounded-lg overflow-hidden">
                 {pdfBase64 ? (
-                  <embed 
+                  <iframe 
                     src={pdfBase64} 
-                    type="application/pdf"
                     width="100%" 
                     height="100%" 
-                    style={{ border: 'none' }}
+                    style={{ border: 'none', minHeight: '600px' }}
+                    title="PDF Preview"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
