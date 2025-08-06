@@ -1167,7 +1167,7 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
                                   variant="outline"
                                   className={getPerformanceColor(participant.performance_rating)}
                                 >
-                                  Rendimiento: {participant.performance_rating}/10
+                                  Rendimiento: {participant.performance_rating}/5
                                 </Badge>
                               )}
                             </div>
