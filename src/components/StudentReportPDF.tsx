@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Line, Rect } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -413,6 +413,34 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
     return skills;
   };
 
+  // Simple visual elements using basic shapes
+  const ProgressBar = ({ value, max, label, color = '#0ea5e9' }: { value: number, max: number, label: string, color?: string }) => (
+    <View style={{ marginBottom: 10 }}>
+      <Text style={{ fontSize: 9, marginBottom: 4, color: '#374151' }}>{label}</Text>
+      <View style={{ 
+        backgroundColor: '#e2e8f0', 
+        height: 8, 
+        borderRadius: 4,
+        flexDirection: 'row'
+      }}>
+        <View style={{ 
+          backgroundColor: color, 
+          width: `${(value / max) * 100}%`, 
+          height: 8, 
+          borderRadius: 4 
+        }} />
+      </View>
+      <Text style={{ fontSize: 8, color: '#64748b', marginTop: 2 }}>{value}/{max}</Text>
+    </View>
+  );
+
+  const StatCard = ({ icon, value, label, color }: { icon: string, value: string, label: string, color: string }) => (
+    <View style={[styles.statBox, { borderLeft: `4 solid ${color}`, minHeight: 60 }]}>
+      <Text style={[styles.statValue, { color }]}>{icon} {value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+
   const analysis = getAnalysisData();
   const recommendations = generateRecommendations();
   const skillsAnalysis = getSkillsAnalysis();
@@ -421,38 +449,34 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
     <Document>
       {/* Página 1: Información General y Estadísticas */}
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header con diseño mejorado */}
         <View style={styles.header}>
           <Text style={styles.title}>
-            REPORTE DE PROGRESO PROFESIONAL
+            📊 REPORTE DE PROGRESO PROFESIONAL
           </Text>
           <Text style={styles.subtitle}>
             {student.first_name} {student.last_name}
           </Text>
           <Text style={styles.subtitle}>
-            Generado el {currentDate}
+            📅 Generado el {currentDate}
           </Text>
         </View>
 
-        {/* Información del Estudiante */}
+        {/* Información del Estudiante con iconos */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 INFORMACIÓN DEL ESTUDIANTE</Text>
+          <Text style={styles.sectionTitle}>👤 INFORMACIÓN DEL ESTUDIANTE</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>Nombre Completo:</Text>
-            <Text style={styles.value}>{student.first_name} {student.last_name}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Email:</Text>
+            <Text style={styles.label}>📧 Email:</Text>
             <Text style={styles.value}>{student.email}</Text>
           </View>
           {student.certification_level && (
             <View style={styles.row}>
-              <Text style={styles.label}>Certificación Actual:</Text>
+              <Text style={styles.label}>🏆 Certificación:</Text>
               <Text style={styles.value}>{student.certification_level}</Text>
             </View>
           )}
           <View style={styles.row}>
-            <Text style={styles.label}>Período de Análisis:</Text>
+            <Text style={styles.label}>📊 Período:</Text>
             <Text style={styles.value}>
               {selectedDiveData.length > 0 ? 
                 `${format(new Date(selectedDiveData[selectedDiveData.length - 1]?.dive_date), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(selectedDiveData[0]?.dive_date), 'dd/MM/yyyy', { locale: es })}` 
@@ -461,29 +485,58 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
           </View>
         </View>
 
-        {/* Estadísticas Principales */}
+        {/* Estadísticas principales con mejor diseño */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 ESTADÍSTICAS PRINCIPALES</Text>
+          <Text style={styles.sectionTitle}>📈 ESTADÍSTICAS PRINCIPALES</Text>
           <View style={styles.statsGrid}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.totalDives}</Text>
-              <Text style={styles.statLabel}>Total Inmersiones</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{(stats.totalBottomTime / 60).toFixed(1)}h</Text>
-              <Text style={styles.statLabel}>Experiencia Total</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.maxDepth}m</Text>
-              <Text style={styles.statLabel}>Profundidad Máxima</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: getPerformanceColor(stats.avgPerformance) }]}>
-                {stats.avgPerformance.toFixed(1)}/10
-              </Text>
-              <Text style={styles.statLabel}>Rendimiento Promedio</Text>
-            </View>
+            <StatCard 
+              icon="🏊‍♂️" 
+              value={stats.totalDives.toString()} 
+              label="Total Inmersiones" 
+              color="#0ea5e9" 
+            />
+            <StatCard 
+              icon="⏱️" 
+              value={`${(stats.totalBottomTime / 60).toFixed(1)}h`} 
+              label="Experiencia Total" 
+              color="#22c55e" 
+            />
+            <StatCard 
+              icon="📏" 
+              value={`${stats.maxDepth}m`} 
+              label="Profundidad Máxima" 
+              color="#f59e0b" 
+            />
+            <StatCard 
+              icon="⭐" 
+              value={`${stats.avgPerformance.toFixed(1)}/5`} 
+              label="Rendimiento Promedio" 
+              color={getPerformanceColor(stats.avgPerformance)} 
+            />
           </View>
+        </View>
+
+        {/* Indicadores de progreso visual */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📊 INDICADORES DE PROGRESO</Text>
+          <ProgressBar 
+            value={analysis.safetyCompliance} 
+            max={100} 
+            label="🛡️ Cumplimiento de Seguridad (%)" 
+            color="#22c55e" 
+          />
+          <ProgressBar 
+            value={analysis.equipmentCompliance} 
+            max={100} 
+            label="⚙️ Chequeos de Equipamiento (%)" 
+            color="#0ea5e9" 
+          />
+          <ProgressBar 
+            value={stats.avgPerformance} 
+            max={5} 
+            label="⭐ Rendimiento Promedio" 
+            color="#f59e0b" 
+          />
         </View>
 
         {/* Análisis Avanzado */}
@@ -625,7 +678,7 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
                   {dive.dive_participants[0].performance_rating && (
                     <View style={[styles.performanceRating, { backgroundColor: getPerformanceColor(dive.dive_participants[0].performance_rating) + '20' }]}>
                       <Text style={{ color: getPerformanceColor(dive.dive_participants[0].performance_rating), fontSize: 9, fontWeight: 'bold' }}>
-                        Rendimiento: {dive.dive_participants[0].performance_rating}/10
+                        Rendimiento: {dive.dive_participants[0].performance_rating}/5
                       </Text>
                     </View>
                   )}
