@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye } from "lucide-react";
+import { Plus, Edit, User, Mail, Award, GraduationCap, Send, MessageSquare, Eye, Search, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,9 @@ export default function Estudiantes() {
   });
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [showDetailedReport, setShowDetailedReport] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'certification' | 'city'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Use the unified students hook
   const { data: instructorStudents = [], refetch: refetchStudents } = useInstructorStudents();
@@ -472,15 +475,111 @@ export default function Estudiantes() {
           )}
 
           <TabsContent value="students" className="space-y-6">
-            <div className="grid gap-6">
-              {instructorStudents.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">No hay estudiantes registrados</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                instructorStudents.map((studentRel) => (
+            {/* Filtros y búsqueda */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filtros y Búsqueda
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre o email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <Select value={sortBy} onValueChange={(value: 'name' | 'email' | 'certification' | 'city') => setSortBy(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Ordenar por..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="name">Nombre</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="certification">Certificación</SelectItem>
+                      <SelectItem value="city">Ciudad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Orden..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascendente</SelectItem>
+                      <SelectItem value="desc">Descendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tarjetas de estudiantes en 2 columnas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {(() => {
+                // Filtrar estudiantes por término de búsqueda
+                const filteredStudents = instructorStudents.filter(studentRel => {
+                  const name = `${studentRel.profile?.first_name || ''} ${studentRel.profile?.last_name || ''} ${studentRel.student_name || ''}`.toLowerCase();
+                  const email = (studentRel.profile?.email || studentRel.student_email || '').toLowerCase();
+                  const searchLower = searchTerm.toLowerCase();
+                  
+                  return name.includes(searchLower) || email.includes(searchLower);
+                });
+
+                // Ordenar estudiantes
+                const sortedStudents = [...filteredStudents].sort((a, b) => {
+                  let aValue = '';
+                  let bValue = '';
+                  
+                  switch (sortBy) {
+                    case 'name':
+                      aValue = `${a.profile?.first_name || ''} ${a.profile?.last_name || ''} ${a.student_name || ''}`.toLowerCase();
+                      bValue = `${b.profile?.first_name || ''} ${b.profile?.last_name || ''} ${b.student_name || ''}`.toLowerCase();
+                      break;
+                    case 'email':
+                      aValue = (a.profile?.email || a.student_email || '').toLowerCase();
+                      bValue = (b.profile?.email || b.student_email || '').toLowerCase();
+                      break;
+                    case 'certification':
+                      aValue = (a.profile?.certification_level || '').toLowerCase();
+                      bValue = (b.profile?.certification_level || '').toLowerCase();
+                      break;
+                    case 'city':
+                      aValue = (a.profile?.city || '').toLowerCase();
+                      bValue = (b.profile?.city || '').toLowerCase();
+                      break;
+                  }
+                  
+                  if (sortOrder === 'asc') {
+                    return aValue.localeCompare(bValue);
+                  } else {
+                    return bValue.localeCompare(aValue);
+                  }
+                });
+
+                if (sortedStudents.length === 0) {
+                  return (
+                    <div className="col-span-2">
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <p className="text-muted-foreground">
+                            {instructorStudents.length === 0 
+                              ? 'No hay estudiantes registrados' 
+                              : 'No se encontraron estudiantes con los filtros aplicados'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                }
+
+                return sortedStudents.map((studentRel) => (
                   <Card key={studentRel.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex justify-between items-start">
@@ -504,7 +603,7 @@ export default function Estudiantes() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 gap-4 mb-4">
                         <div className="flex items-center gap-2">
                           <Award className="h-4 w-4 text-muted-foreground" />
                           <div>
@@ -527,7 +626,7 @@ export default function Estudiantes() {
                       {/* Información adicional del estudiante */}
                       {studentRel.profile && (
                         <div className="space-y-3 pt-4 border-t">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 gap-4">
                             <div>
                               <p className="text-xs text-muted-foreground">Teléfono</p>
                               <p className="text-sm">{studentRel.profile.phone || 'No registrado'}</p>
@@ -548,7 +647,7 @@ export default function Estudiantes() {
                       )}
                       
                       {/* Botones de acción */}
-                      <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t">
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -584,8 +683,8 @@ export default function Estudiantes() {
                       </div>
                     </CardContent>
                   </Card>
-                ))
-              )}
+                ));
+              })()}
             </div>
           </TabsContent>
 
