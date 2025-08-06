@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { StudentReportPDF } from './StudentReportPDF';
 import { SingleDiveReportPDF } from './SingleDiveReportPDF';
-import { Download, Eye, Loader2, FileText, History } from 'lucide-react';
+import { Download, Eye, Loader2, FileText, History, Save } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface DiveData {
   id: string;
@@ -80,6 +82,8 @@ export function ReportPreviewModal({
   const [showPreview, setShowPreview] = useState(false);
   const [pdfBase64, setPdfBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   const isHistoricalReport = reportType === 'historical';
   const isSingleDiveReport = reportType === 'single' && singleDiveId;
@@ -110,16 +114,29 @@ export function ReportPreviewModal({
     ? `inmersion_${student.first_name}_${student.last_name}_${singleDive.dive_sites.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
     : `reporte_historico_${student.first_name}_${student.last_name}_${new Date().toISOString().split('T')[0]}.pdf`;
 
+  // Get multimedia files for single dive report
+  const getSingleDiveMediaFiles = () => {
+    if (!isSingleDiveReport || !singleDive) return [];
+    
+    const participant = singleDive.dive_participants[0];
+    const allUrls = [
+      ...(participant?.images || []),
+      ...(participant?.videos || []),
+      ...(singleDive.photos || []),
+      ...(singleDive.videos || [])
+    ];
+    
+    return studentMediaFiles.filter(file => 
+      allUrls.includes(file.url) || 
+      allUrls.some(url => url.includes(file.name))
+    );
+  };
+
   const reportDocument = isSingleDiveReport && singleDive ? (
     <SingleDiveReportPDF
       student={student}
       dive={singleDive}
-      studentMediaFiles={studentMediaFiles.filter(file => 
-        singleDive.dive_participants[0]?.images?.includes(file.url) ||
-        singleDive.dive_participants[0]?.videos?.includes(file.url) ||
-        singleDive.photos?.includes(file.url) ||
-        singleDive.videos?.includes(file.url)
-      )}
+      studentMediaFiles={getSingleDiveMediaFiles()}
     />
   ) : (
     <StudentReportPDF
@@ -130,6 +147,77 @@ export function ReportPreviewModal({
       stats={stats}
     />
   );
+
+  const saveReportToDatabase = async () => {
+    setSaving(true);
+    try {
+      // Generate PDF blob
+      const pdfBlob = await pdf(reportDocument).toBlob();
+      
+      // Upload PDF to storage
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const storageFileName = `${student.id}/${fileName.replace('.pdf', '')}_${timestamp}.pdf`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('pdf-reports')
+        .upload(storageFileName, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(`Error uploading PDF: ${uploadError.message}`);
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('pdf-reports')
+        .getPublicUrl(storageFileName);
+
+      // Save report record to database
+      const reportData = {
+        student_id: student.id,
+        report_type: isSingleDiveReport ? 'single_dive' : 'historical',
+        pdf_url: publicUrl,
+        file_name: fileName,
+        dive_ids: isSingleDiveReport ? [singleDiveId!] : selectedDives,
+        metadata: {
+          generated_at: new Date().toISOString(),
+          dive_count: isSingleDiveReport ? 1 : selectedDives.length,
+          student_name: `${student.first_name} ${student.last_name}`,
+          multimedia_count: isSingleDiveReport ? getSingleDiveMediaFiles().length : studentMediaFiles.length
+        }
+      };
+
+      const { error: dbError } = await supabase
+        .from('course_completion_reports')
+        .insert(reportData);
+
+      if (dbError) {
+        throw new Error(`Error saving report record: ${dbError.message}`);
+      }
+
+      toast({
+        title: "Reporte guardado",
+        description: `El ${isSingleDiveReport ? 'reporte de inmersión' : 'reporte histórico'} se ha guardado exitosamente`,
+      });
+
+      // Close modal after successful save
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error saving report:', error);
+      toast({
+        title: "Error al guardar",
+        description: error instanceof Error ? error.message : "No se pudo guardar el reporte",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -176,8 +264,8 @@ export function ReportPreviewModal({
                       <>
                         <p><span className="font-medium">Profundidad:</span> {singleDive.dive_participants[0]?.depth_achieved || singleDive.depth_achieved} m</p>
                         <p><span className="font-medium">Tiempo:</span> {singleDive.dive_participants[0]?.bottom_time || singleDive.bottom_time} min</p>
-                        <p><span className="font-medium">Calificación:</span> {singleDive.dive_participants[0]?.performance_rating || 'N/A'}/10</p>
-                        <p><span className="font-medium">Multimedia:</span> {studentMediaFiles.length} archivos</p>
+                        <p><span className="font-medium">Calificación:</span> {singleDive.dive_participants[0]?.performance_rating || 'N/A'}/5</p>
+                        <p><span className="font-medium">Multimedia:</span> {getSingleDiveMediaFiles().length} archivos</p>
                       </>
                     ) : (
                       <>
@@ -217,6 +305,16 @@ export function ReportPreviewModal({
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
                   {loading ? 'Generando...' : `Previsualizar ${isSingleDiveReport ? 'Inmersión' : 'Reporte Histórico'}`}
                 </Button>
+
+                <Button 
+                  onClick={saveReportToDatabase}
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                  disabled={saving}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {saving ? 'Guardando...' : 'Guardar Reporte'}
+                </Button>
                 
                 <PDFDownloadLink
                   document={reportDocument}
@@ -248,24 +346,36 @@ export function ReportPreviewModal({
                   ← Volver al Resumen
                 </Button>
                 
-                <PDFDownloadLink
-                  document={reportDocument}
-                  fileName={fileName}
-                >
-                  {({ loading }) => (
-                    <Button 
-                      className="bg-gradient-ocean flex items-center gap-2"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="h-4 w-4" />
-                      )}
-                      {loading ? 'Generando...' : `Descargar ${isSingleDiveReport ? 'Inmersión' : 'Reporte Histórico'}`}
-                    </Button>
-                  )}
-                </PDFDownloadLink>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={saveReportToDatabase}
+                    variant="secondary"
+                    className="flex items-center gap-2"
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {saving ? 'Guardando...' : 'Guardar'}
+                  </Button>
+
+                  <PDFDownloadLink
+                    document={reportDocument}
+                    fileName={fileName}
+                  >
+                    {({ loading }) => (
+                      <Button 
+                        className="bg-gradient-ocean flex items-center gap-2"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        {loading ? 'Generando...' : `Descargar ${isSingleDiveReport ? 'Inmersión' : 'Reporte Histórico'}`}
+                      </Button>
+                    )}
+                  </PDFDownloadLink>
+                </div>
               </div>
               
               <div className="flex-1 border rounded-lg overflow-hidden">
