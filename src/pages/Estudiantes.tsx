@@ -553,12 +553,15 @@ export default function Estudiantes() {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
+                            // Find the matching profile for this student
+                            const matchingProfile = instructorStudents.find(s => s.student_id === studentRel.student_id)?.profile;
+                            
                             setSelectedStudent({
-                              id: studentRel.student_id || studentRel.profile?.user_id,
-                              first_name: studentRel.profile?.first_name || studentRel.student_name?.split(' ')[0],
-                              last_name: studentRel.profile?.last_name || studentRel.student_name?.split(' ').slice(1).join(' '),
-                              email: studentRel.profile?.email || studentRel.student_email,
-                              certification_level: studentRel.profile?.certification_level
+                              id: studentRel.student_id,
+                              first_name: matchingProfile?.first_name || studentRel.student_name?.split(' ')[0] || '',
+                              last_name: matchingProfile?.last_name || studentRel.student_name?.split(' ').slice(1).join(' ') || '',
+                              email: matchingProfile?.email || studentRel.student_email,
+                              certification_level: matchingProfile?.certification_level
                             });
                             setShowDetailedReport(true);
                           }}

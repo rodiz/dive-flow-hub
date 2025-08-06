@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,7 +75,7 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
   const fetchStudentDives = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('dive_participants')
         .select(`
           dive_id,
@@ -99,8 +99,9 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
             )
           )
         `)
-        .eq('student_id', student.id)
-        .order('dives.dive_date', { ascending: false });
+        .eq('student_id', student.id);
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -122,6 +123,9 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
         photos: participant.dives.photos || [],
         videos: participant.dives.videos || []
       })) || [];
+
+      // Sort by date descending
+      formattedDives.sort((a, b) => new Date(b.dive_date).getTime() - new Date(a.dive_date).getTime());
 
       setDives(formattedDives);
       setSelectedDives(formattedDives.map(d => d.id));
@@ -222,11 +226,14 @@ export function StudentDetailedReport({ isOpen, onClose, student }: StudentDetai
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback>
-                {student.first_name?.[0]}{student.last_name?.[0]}
+                {student.first_name?.[0]?.toUpperCase()}{student.last_name?.[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
             Reporte Detallado - {student.first_name} {student.last_name}
           </DialogTitle>
+          <DialogDescription>
+            Visualiza y selecciona las inmersiones para generar un reporte completo del estudiante.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="h-full">
