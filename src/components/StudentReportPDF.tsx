@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Line } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -30,8 +30,9 @@ interface DiveData {
     tank_pressure_end?: number;
     oxygen_amount?: number;
     ballast_weight?: number;
-    equipment_check_completed?: boolean;
-    medical_check_completed?: boolean;
+    equipment_check?: boolean;
+    medical_check?: boolean;
+    skills_completed?: any;
   }>;
   photos: string[];
   videos: string[];
@@ -67,139 +68,235 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#ffffff',
-    padding: 30,
+    padding: 25,
     fontFamily: 'Helvetica',
+    fontSize: 10,
   },
   header: {
-    marginBottom: 20,
-    paddingBottom: 10,
-    borderBottomWidth: 2,
+    marginBottom: 25,
+    paddingBottom: 15,
+    borderBottomWidth: 3,
     borderBottomColor: '#0ea5e9',
+    backgroundColor: '#f8fafc',
+    padding: 15,
+    borderRadius: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0ea5e9',
-    marginBottom: 5,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#64748b',
-    marginBottom: 10,
+    textAlign: 'center',
+    marginBottom: 5,
   },
   section: {
     marginBottom: 20,
+    backgroundColor: '#fefefe',
+    padding: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#1e293b',
-    marginBottom: 10,
-    paddingBottom: 5,
+    marginBottom: 12,
+    paddingBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#cbd5e1',
+    backgroundColor: '#f1f5f9',
+    padding: 8,
+    borderRadius: 4,
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 6,
+    alignItems: 'center',
   },
   label: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#475569',
     width: 120,
   },
   value: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#1e293b',
     flex: 1,
   },
-  statsContainer: {
+  statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 15,
   },
   statBox: {
     backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 8,
     width: '23%',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 8,
   },
   statValue: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0ea5e9',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 8,
     color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 1.2,
+  },
+  chartContainer: {
+    height: 120,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    marginBottom: 15,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  chartTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 8,
     textAlign: 'center',
   },
   diveItem: {
     backgroundColor: '#f8fafc',
-    padding: 12,
+    padding: 10,
     marginBottom: 8,
-    borderRadius: 5,
-    borderLeftWidth: 3,
+    borderRadius: 6,
+    borderLeftWidth: 4,
     borderLeftColor: '#0ea5e9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   diveHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 6,
   },
   diveName: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#1e293b',
   },
   diveDate: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#64748b',
   },
-  diveStats: {
+  diveGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 5,
+    marginBottom: 6,
   },
-  diveStatItem: {
-    fontSize: 10,
+  diveDetail: {
+    fontSize: 8,
     color: '#475569',
+    width: '30%',
+    marginBottom: 3,
   },
   performanceRating: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
-    color: '#059669',
+    backgroundColor: '#dcfce7',
+    padding: 3,
+    borderRadius: 3,
+    textAlign: 'center',
   },
-  diveNotes: {
-    fontSize: 10,
-    color: '#64748b',
-    fontStyle: 'italic',
-    marginTop: 5,
+  recommendationBox: {
+    backgroundColor: '#f0f9ff',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
+    marginBottom: 10,
+  },
+  recommendationTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+    marginBottom: 6,
+  },
+  recommendationText: {
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.4,
+    marginBottom: 4,
+  },
+  skillsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  skillBadge: {
+    backgroundColor: '#dcfce7',
+    padding: 4,
+    borderRadius: 4,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  skillText: {
+    fontSize: 8,
+    color: '#166534',
+  },
+  analysisContainer: {
+    backgroundColor: '#fefce8',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+    marginBottom: 15,
+  },
+  analysisTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#92400e',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  trendIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  trendLabel: {
+    fontSize: 9,
+    color: '#374151',
+    width: 100,
+    marginRight: 10,
+  },
+  trendValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    flex: 1,
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 30,
-    right: 30,
+    bottom: 20,
+    left: 25,
+    right: 25,
     textAlign: 'center',
     color: '#64748b',
-    fontSize: 10,
+    fontSize: 8,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-    paddingTop: 10,
-  },
-  pageNumber: {
-    position: 'absolute',
-    fontSize: 10,
-    bottom: 30,
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    color: '#64748b',
+    paddingTop: 8,
   },
 });
 
@@ -219,46 +316,127 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
     return '#dc2626';
   };
 
-  const shortenUrl = (url: string, maxLength: number = 40) => {
-    if (url.length <= maxLength) return url;
-    const start = url.substring(0, 15);
-    const end = url.substring(url.length - 20);
-    return `${start}...${end}`;
-  };
-
   const getAnalysisData = () => {
     const depths = selectedDiveData.map(d => d.dive_participants[0]?.depth_achieved || d.depth_achieved || 0);
     const times = selectedDiveData.map(d => d.dive_participants[0]?.bottom_time || d.bottom_time || 0);
     const performances = selectedDiveData.map(d => d.dive_participants[0]?.performance_rating || 0).filter(p => p > 0);
     
+    // Análisis de tendencias más detallado
+    const depthProgression = depths.length > 1 ? 
+      ((depths[depths.length - 1] - depths[0]) / depths[0] * 100).toFixed(1) : '0';
+    const performanceProgression = performances.length > 1 ? 
+      ((performances[performances.length - 1] - performances[0]) / performances[0] * 100).toFixed(1) : '0';
+    
     return {
       avgDepth: depths.length > 0 ? (depths.reduce((a, b) => a + b, 0) / depths.length).toFixed(1) : '0',
-      depthTrend: depths.length > 1 ? (depths[depths.length - 1] > depths[0] ? 'Aumentando' : 'Estable') : 'N/A',
       avgTime: times.length > 0 ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : '0',
-      performanceTrend: performances.length > 1 ? (performances[performances.length - 1] > performances[0] ? 'Mejorando' : 'Estable') : 'N/A',
-      totalExperience: times.reduce((a, b) => a + b, 0),
-      consistencyScore: depths.length > 1 ? (10 - (Math.max(...depths) - Math.min(...depths)) / Math.max(...depths) * 10).toFixed(1) : '10'
+      depthProgression,
+      performanceProgression,
+      consistencyScore: depths.length > 1 ? Math.max(0, (10 - (Math.max(...depths) - Math.min(...depths)) / Math.max(...depths) * 10)).toFixed(1) : '10',
+      safetyCompliance: selectedDiveData.filter(d => d.dive_participants[0]?.safety_stop_time).length / selectedDiveData.length * 100,
+      equipmentCompliance: selectedDiveData.filter(d => d.dive_participants[0]?.equipment_check).length / selectedDiveData.length * 100,
     };
   };
 
+  const generateRecommendations = () => {
+    const analysis = getAnalysisData();
+    const recommendations = [];
+
+    // Recomendaciones basadas en rendimiento
+    if (stats.avgPerformance < 6) {
+      recommendations.push({
+        category: 'Rendimiento',
+        text: 'Se recomienda revisar técnicas básicas de buceo y practicar más en aguas poco profundas.',
+        priority: 'Alta'
+      });
+    } else if (stats.avgPerformance < 8) {
+      recommendations.push({
+        category: 'Rendimiento',
+        text: 'Buen progreso. Continuar con práctica regular y considerar cursos avanzados.',
+        priority: 'Media'
+      });
+    } else {
+      recommendations.push({
+        category: 'Rendimiento',
+        text: 'Excelente rendimiento. Listo para desafíos más avanzados y especializaciones.',
+        priority: 'Baja'
+      });
+    }
+
+    // Recomendaciones basadas en profundidad
+    if (stats.maxDepth < 15) {
+      recommendations.push({
+        category: 'Progresión',
+        text: 'Considerar aumentar gradualmente la profundidad con supervisión del instructor.',
+        priority: 'Media'
+      });
+    } else if (stats.maxDepth > 25) {
+      recommendations.push({
+        category: 'Seguridad',
+        text: 'Mantener protocolos de seguridad estrictos para buceo profundo. Considerar curso Deep Diver.',
+        priority: 'Alta'
+      });
+    }
+
+    // Recomendaciones de seguridad
+    if (parseFloat(analysis.safetyCompliance.toFixed(1)) < 80) {
+      recommendations.push({
+        category: 'Seguridad',
+        text: 'Mejorar cumplimiento de paradas de seguridad. Es fundamental para prevenir enfermedad descompresiva.',
+        priority: 'Alta'
+      });
+    }
+
+    // Recomendaciones de equipamiento
+    if (parseFloat(analysis.equipmentCompliance.toFixed(1)) < 90) {
+      recommendations.push({
+        category: 'Equipamiento',
+        text: 'Realizar chequeos de equipo más rigurosos antes de cada inmersión.',
+        priority: 'Alta'
+      });
+    }
+
+    return recommendations;
+  };
+
+  const getSkillsAnalysis = () => {
+    const skills = {};
+    selectedDiveData.forEach(dive => {
+      if (dive.dive_participants[0]?.skills_completed) {
+        Object.entries(dive.dive_participants[0].skills_completed).forEach(([skill, completed]) => {
+          if (!skills[skill]) skills[skill] = { completed: 0, total: 0 };
+          skills[skill].total++;
+          if (completed) skills[skill].completed++;
+        });
+      }
+    });
+    return skills;
+  };
+
   const analysis = getAnalysisData();
+  const recommendations = generateRecommendations();
+  const skillsAnalysis = getSkillsAnalysis();
 
   return (
     <Document>
+      {/* Página 1: Información General y Estadísticas */}
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>
-            Reporte de Progreso - {student.first_name} {student.last_name}
+            REPORTE DE PROGRESO PROFESIONAL
+          </Text>
+          <Text style={styles.subtitle}>
+            {student.first_name} {student.last_name}
           </Text>
           <Text style={styles.subtitle}>
             Generado el {currentDate}
           </Text>
         </View>
 
-        {/* Student Information */}
+        {/* Información del Estudiante */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información del Estudiante</Text>
+          <Text style={styles.sectionTitle}>📋 INFORMACIÓN DEL ESTUDIANTE</Text>
           <View style={styles.row}>
             <Text style={styles.label}>Nombre Completo:</Text>
             <Text style={styles.value}>{student.first_name} {student.last_name}</Text>
@@ -269,41 +447,49 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
           </View>
           {student.certification_level && (
             <View style={styles.row}>
-              <Text style={styles.label}>Certificación:</Text>
+              <Text style={styles.label}>Certificación Actual:</Text>
               <Text style={styles.value}>{student.certification_level}</Text>
             </View>
           )}
+          <View style={styles.row}>
+            <Text style={styles.label}>Período de Análisis:</Text>
+            <Text style={styles.value}>
+              {selectedDiveData.length > 0 ? 
+                `${format(new Date(selectedDiveData[selectedDiveData.length - 1]?.dive_date), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(selectedDiveData[0]?.dive_date), 'dd/MM/yyyy', { locale: es })}` 
+                : 'N/A'}
+            </Text>
+          </View>
         </View>
 
-        {/* Statistics */}
+        {/* Estadísticas Principales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Estadísticas Generales</Text>
-          <View style={styles.statsContainer}>
+          <Text style={styles.sectionTitle}>📊 ESTADÍSTICAS PRINCIPALES</Text>
+          <View style={styles.statsGrid}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{stats.totalDives}</Text>
               <Text style={styles.statLabel}>Total Inmersiones</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.totalBottomTime}min</Text>
-              <Text style={styles.statLabel}>Tiempo Total</Text>
+              <Text style={styles.statValue}>{(stats.totalBottomTime / 60).toFixed(1)}h</Text>
+              <Text style={styles.statLabel}>Experiencia Total</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{stats.maxDepth}m</Text>
-              <Text style={styles.statLabel}>Profundidad Máx</Text>
+              <Text style={styles.statLabel}>Profundidad Máxima</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: getPerformanceColor(stats.avgPerformance) }]}>
                 {stats.avgPerformance.toFixed(1)}/10
               </Text>
-              <Text style={styles.statLabel}>Rendimiento Prom</Text>
+              <Text style={styles.statLabel}>Rendimiento Promedio</Text>
             </View>
           </View>
         </View>
 
-        {/* Analysis and Trends */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Análisis y Tendencias</Text>
-          <View style={styles.statsContainer}>
+        {/* Análisis Avanzado */}
+        <View style={styles.analysisContainer}>
+          <Text style={styles.analysisTitle}>🔍 ANÁLISIS DETALLADO DE PROGRESO</Text>
+          <View style={styles.statsGrid}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{analysis.avgDepth}m</Text>
               <Text style={styles.statLabel}>Profundidad Promedio</Text>
@@ -314,29 +500,82 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{analysis.consistencyScore}</Text>
-              <Text style={styles.statLabel}>Consistencia</Text>
+              <Text style={styles.statLabel}>Índice Consistencia</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>{analysis.totalExperience}h</Text>
-              <Text style={styles.statLabel}>Experiencia Total</Text>
+              <Text style={styles.statValue}>{analysis.safetyCompliance.toFixed(0)}%</Text>
+              <Text style={styles.statLabel}>Cumplimiento Seguridad</Text>
             </View>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Tendencia de Profundidad:</Text>
-            <Text style={styles.value}>{analysis.depthTrend}</Text>
+
+          <View style={styles.trendIndicator}>
+            <Text style={styles.trendLabel}>Progresión Profundidad:</Text>
+            <Text style={[styles.trendValue, { color: parseFloat(analysis.depthProgression) > 0 ? '#059669' : '#dc2626' }]}>
+              {parseFloat(analysis.depthProgression) > 0 ? '+' : ''}{analysis.depthProgression}%
+            </Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Tendencia de Rendimiento:</Text>
-            <Text style={styles.value}>{analysis.performanceTrend}</Text>
+          <View style={styles.trendIndicator}>
+            <Text style={styles.trendLabel}>Evolución Rendimiento:</Text>
+            <Text style={[styles.trendValue, { color: parseFloat(analysis.performanceProgression) > 0 ? '#059669' : '#dc2626' }]}>
+              {parseFloat(analysis.performanceProgression) > 0 ? '+' : ''}{analysis.performanceProgression}%
+            </Text>
+          </View>
+          <View style={styles.trendIndicator}>
+            <Text style={styles.trendLabel}>Chequeos Equipamiento:</Text>
+            <Text style={[styles.trendValue, { color: analysis.equipmentCompliance > 80 ? '#059669' : '#dc2626' }]}>
+              {analysis.equipmentCompliance.toFixed(0)}%
+            </Text>
           </View>
         </View>
 
-        {/* Selected Dives */}
+        {/* Habilidades Desarrolladas */}
+        {Object.keys(skillsAnalysis).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🎯 HABILIDADES DESARROLLADAS</Text>
+            <View style={styles.skillsGrid}>
+              {Object.entries(skillsAnalysis).map(([skill, data]: [string, any]) => (
+                <View key={skill} style={styles.skillBadge}>
+                  <Text style={styles.skillText}>
+                    {skill}: {data.completed}/{data.total} ({((data.completed/data.total)*100).toFixed(0)}%)
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Recomendaciones Profesionales */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💡 RECOMENDACIONES PROFESIONALES</Text>
+          {recommendations.map((rec, index) => (
+            <View key={index} style={styles.recommendationBox}>
+              <Text style={styles.recommendationTitle}>
+                {rec.category} - Prioridad {rec.priority}
+              </Text>
+              <Text style={styles.recommendationText}>{rec.text}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.footer}>
+          <Text>Página 1 de 2 - Reporte generado por Sistema de Gestión de Buceo</Text>
+        </View>
+      </Page>
+
+      {/* Página 2: Detalle de Inmersiones */}
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>DETALLE DE INMERSIONES</Text>
+          <Text style={styles.subtitle}>Registro completo de actividades</Text>
+        </View>
+
+        {/* Inmersiones Detalladas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Inmersiones Incluidas ({selectedDiveData.length})
+            🤿 REGISTRO DE INMERSIONES ({selectedDiveData.length})
           </Text>
-          {selectedDiveData.map((dive, index) => (
+          
+          {selectedDiveData.map((dive) => (
             <View key={dive.id} style={styles.diveItem}>
               <View style={styles.diveHeader}>
                 <Text style={styles.diveName}>{dive.dive_sites?.name}</Text>
@@ -345,126 +584,73 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
                 </Text>
               </View>
               
-              <View style={styles.diveStats}>
-                <Text style={styles.diveStatItem}>
+              <View style={styles.diveGrid}>
+                <Text style={styles.diveDetail}>
                   Profundidad: {dive.dive_participants[0]?.depth_achieved || dive.depth_achieved}m
                 </Text>
-                <Text style={styles.diveStatItem}>
+                <Text style={styles.diveDetail}>
                   Tiempo: {dive.dive_participants[0]?.bottom_time || dive.bottom_time}min
                 </Text>
-                {dive.dive_participants[0]?.performance_rating && (
-                  <Text style={[styles.performanceRating, { 
-                    color: getPerformanceColor(dive.dive_participants[0].performance_rating) 
-                  }]}>
-                    Rendimiento: {dive.dive_participants[0].performance_rating}/10
-                  </Text>
-                )}
+                <Text style={styles.diveDetail}>
+                  Ubicación: {dive.dive_sites?.location}
+                </Text>
               </View>
 
-              <View style={styles.row}>
-                <Text style={styles.label}>Ubicación:</Text>
-                <Text style={styles.value}>{dive.dive_sites?.location}</Text>
-              </View>
-
-              {/* Detailed Participant Information */}
               {dive.dive_participants[0] && (
-                <View style={{ marginTop: 5 }}>
-                  <Text style={[styles.label, { marginBottom: 3 }]}>Detalles Técnicos:</Text>
-                  <View style={styles.diveStats}>
-                    {dive.dive_participants[0].wetsuit_thickness && (
-                      <Text style={styles.diveStatItem}>Grosor Traje: {dive.dive_participants[0].wetsuit_thickness}mm</Text>
-                    )}
+                <>
+                  <View style={styles.diveGrid}>
                     {dive.dive_participants[0].gas_mix && (
-                      <Text style={styles.diveStatItem}>Mezcla Gas: {dive.dive_participants[0].gas_mix}</Text>
+                      <Text style={styles.diveDetail}>Gas: {dive.dive_participants[0].gas_mix}</Text>
                     )}
                     {dive.dive_participants[0].visibility_conditions && (
-                      <Text style={styles.diveStatItem}>Visibilidad: {dive.dive_participants[0].visibility_conditions}m</Text>
+                      <Text style={styles.diveDetail}>Visibilidad: {dive.dive_participants[0].visibility_conditions}m</Text>
+                    )}
+                    {dive.dive_participants[0].water_temperature && (
+                      <Text style={styles.diveDetail}>Temp: {dive.dive_participants[0].water_temperature}°C</Text>
                     )}
                   </View>
-                  <View style={styles.diveStats}>
-                    {dive.dive_participants[0].water_temperature !== undefined && (
-                      <Text style={styles.diveStatItem}>Temp Agua: {dive.dive_participants[0].water_temperature}°C</Text>
+                  
+                  <View style={styles.diveGrid}>
+                    {dive.dive_participants[0].ballast_weight && (
+                      <Text style={styles.diveDetail}>Lastre: {dive.dive_participants[0].ballast_weight}kg</Text>
                     )}
                     {dive.dive_participants[0].tank_pressure_start && (
-                      <Text style={styles.diveStatItem}>Presión Inicial: {dive.dive_participants[0].tank_pressure_start}bar</Text>
+                      <Text style={styles.diveDetail}>P.Inicial: {dive.dive_participants[0].tank_pressure_start}bar</Text>
                     )}
                     {dive.dive_participants[0].tank_pressure_end && (
-                      <Text style={styles.diveStatItem}>Presión Final: {dive.dive_participants[0].tank_pressure_end}bar</Text>
+                      <Text style={styles.diveDetail}>P.Final: {dive.dive_participants[0].tank_pressure_end}bar</Text>
                     )}
                   </View>
-                  <View style={styles.diveStats}>
-                    {dive.dive_participants[0].ballast_weight && (
-                      <Text style={styles.diveStatItem}>Lastre: {dive.dive_participants[0].ballast_weight}kg</Text>
-                    )}
-                    {dive.dive_participants[0].safety_stop_time && (
-                      <Text style={styles.diveStatItem}>Parada Seguridad: {dive.dive_participants[0].safety_stop_time}min</Text>
-                    )}
-                    {dive.dive_participants[0].oxygen_amount && (
-                      <Text style={styles.diveStatItem}>Oxígeno: {dive.dive_participants[0].oxygen_amount}%</Text>
-                    )}
-                  </View>
-                  {dive.dive_participants[0].current_strength && (
-                    <View style={styles.diveStats}>
-                      <Text style={styles.diveStatItem}>Fuerza Corriente: {dive.dive_participants[0].current_strength}/10</Text>
+
+                  {dive.dive_participants[0].performance_rating && (
+                    <View style={[styles.performanceRating, { backgroundColor: getPerformanceColor(dive.dive_participants[0].performance_rating) + '20' }]}>
+                      <Text style={{ color: getPerformanceColor(dive.dive_participants[0].performance_rating), fontSize: 9, fontWeight: 'bold' }}>
+                        Rendimiento: {dive.dive_participants[0].performance_rating}/10
+                      </Text>
                     </View>
                   )}
-                  
-                  {/* Equipment and Medical Checks */}
-                  <View style={styles.diveStats}>
-                    {dive.dive_participants[0].equipment_check_completed !== undefined && (
-                      <Text style={styles.diveStatItem}>
-                        Chequeo Equipo: {dive.dive_participants[0].equipment_check_completed ? 'Completado' : 'No completado'}
-                      </Text>
-                    )}
-                    {dive.dive_participants[0].medical_check_completed !== undefined && (
-                      <Text style={styles.diveStatItem}>
-                        Chequeo Médico: {dive.dive_participants[0].medical_check_completed ? 'Completado' : 'No completado'}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              )}
 
-              {dive.dive_participants[0]?.individual_notes && (
-                <Text style={styles.diveNotes}>
-                  Notas: {dive.dive_participants[0].individual_notes}
-                </Text>
-              )}
-
-              {/* Multimedia URLs for this dive */}
-              {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) > 0 && (
-                <View style={{ marginTop: 5 }}>
-                  <Text style={[styles.diveNotes, { fontStyle: 'normal', fontWeight: 'bold' }]}>
-                    Multimedia de esta inmersión:
-                  </Text>
-                  {[...(dive.photos || []), ...(dive.videos || []), ...(dive.dive_participants[0]?.images || []), ...(dive.dive_participants[0]?.videos || [])].slice(0, 3).map((url, idx) => (
-                    <Text key={idx} style={[styles.diveNotes, { fontSize: 8 }]}>
-                      • {shortenUrl(url)}
-                    </Text>
-                  ))}
-                  {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) > 3 && (
-                    <Text style={[styles.diveNotes, { fontSize: 8 }]}>
-                      ... y {((dive.photos?.length || 0) + (dive.videos?.length || 0) + (dive.dive_participants[0]?.images?.length || 0) + (dive.dive_participants[0]?.videos?.length || 0)) - 3} archivos más
+                  {dive.dive_participants[0].individual_notes && (
+                    <Text style={{ fontSize: 8, color: '#64748b', fontStyle: 'italic', marginTop: 4 }}>
+                      Notas: {dive.dive_participants[0].individual_notes}
                     </Text>
                   )}
-                </View>
+                </>
               )}
             </View>
           ))}
         </View>
 
-        {/* Instructor and Center Information */}
-        {selectedDiveData.length > 0 && (selectedDiveData[0].instructor || selectedDiveData[0].diving_center) && (
+        {/* Información del Instructor */}
+        {selectedDiveData.length > 0 && selectedDiveData[0].instructor && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Información del Instructor y Centro</Text>
-            {selectedDiveData[0].instructor && (
-              <View style={styles.row}>
-                <Text style={styles.label}>Instructor:</Text>
-                <Text style={styles.value}>
-                  {selectedDiveData[0].instructor.first_name} {selectedDiveData[0].instructor.last_name}
-                </Text>
-              </View>
-            )}
+            <Text style={styles.sectionTitle}>👨‍🏫 INFORMACIÓN DEL INSTRUCTOR</Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>Instructor:</Text>
+              <Text style={styles.value}>
+                {selectedDiveData[0].instructor.first_name} {selectedDiveData[0].instructor.last_name}
+              </Text>
+            </View>
             {selectedDiveData[0].diving_center && (
               <View style={styles.row}>
                 <Text style={styles.label}>Centro de Buceo:</Text>
@@ -474,55 +660,32 @@ export const StudentReportPDF: React.FC<StudentReportPDFProps> = ({
           </View>
         )}
 
-        {/* Multimedia Summary */}
+        {/* Multimedia */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Multimedia</Text>
+          <Text style={styles.sectionTitle}>📷 MULTIMEDIA ADJUNTA</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>Archivos generales del estudiante:</Text>
+            <Text style={styles.label}>Archivos Generales:</Text>
             <Text style={styles.value}>
               {studentMediaFiles.length} archivo(s) - {studentMediaFiles.filter(f => f.type === 'image').length} imágenes, {studentMediaFiles.filter(f => f.type === 'video').length} videos
             </Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Multimedia de inmersiones:</Text>
-            <Text style={styles.value}>
-              {selectedDiveData.reduce((total, dive) => 
-                total + (dive.photos?.length || 0) + (dive.videos?.length || 0) +
-                (dive.dive_participants[0]?.images?.length || 0) + 
-                (dive.dive_participants[0]?.videos?.length || 0), 0
-              )} archivo(s)
-            </Text>
-          </View>
           
-          {/* Multimedia URLs */}
-          {studentMediaFiles.length > 0 && (
-            <View style={{ marginTop: 10 }}>
-              <Text style={[styles.label, { marginBottom: 5 }]}>Enlaces de Multimedia del Estudiante:</Text>
-              {studentMediaFiles.slice(0, 10).map((media, index) => (
-                <View key={index} style={styles.row}>
-                  <Text style={[styles.value, { fontSize: 9 }]}>
-                    {index + 1}. {media.name} ({media.type}) - {shortenUrl(media.url, 60)}
-                  </Text>
-                </View>
-              ))}
-              {studentMediaFiles.length > 10 && (
-                <Text style={[styles.value, { fontSize: 9, fontStyle: 'italic' }]}>
-                  ... y {studentMediaFiles.length - 10} archivos más
-                </Text>
-              )}
-            </View>
+          {studentMediaFiles.slice(0, 5).map((file, idx) => (
+            <Text key={idx} style={{ fontSize: 8, color: '#64748b', marginLeft: 120, marginBottom: 2 }}>
+              • {file.name}
+            </Text>
+          ))}
+          
+          {studentMediaFiles.length > 5 && (
+            <Text style={{ fontSize: 8, color: '#64748b', marginLeft: 120 }}>
+              ... y {studentMediaFiles.length - 5} archivo(s) más
+            </Text>
           )}
         </View>
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Este reporte fue generado automáticamente por el sistema de gestión de buceo.
-          Para más información, contacte al instructor responsable.
-        </Text>
-
-        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => 
-          `Página ${pageNumber} de ${totalPages}`
-        } fixed />
+        <View style={styles.footer}>
+          <Text>Página 2 de 2 - Este reporte es válido únicamente con la firma digital del instructor certificado</Text>
+        </View>
       </Page>
     </Document>
   );
