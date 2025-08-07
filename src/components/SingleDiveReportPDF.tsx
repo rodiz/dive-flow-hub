@@ -61,28 +61,31 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#ffffff',
-    padding: 30,
-    fontFamily: 'Helvetica'
+    padding: 25,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
   },
   header: {
-    marginBottom: 20,
-    borderBottom: '2 solid #2563eb',
+    marginBottom: 25,
     paddingBottom: 15,
+    borderBottomWidth: 3,
+    borderBottomColor: '#0ea5e9',
     backgroundColor: '#f8fafc',
     padding: 15,
-    borderRadius: 8
+    borderRadius: 8,
   },
   title: {
-    fontSize: 24,
-    color: '#1e40af',
-    marginBottom: 5,
-    textAlign: 'center'
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#64748b',
-    marginBottom: 10,
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: 5,
   },
   section: {
     marginBottom: 20,
@@ -90,83 +93,111 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#e2e8f0'
+    borderColor: '#e2e8f0',
   },
   sectionTitle: {
-    fontSize: 16,
-    color: '#1e40af',
-    marginBottom: 10,
-    borderBottom: '1 solid #e2e8f0',
-    paddingBottom: 5
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 12,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+    backgroundColor: '#f1f5f9',
+    padding: 8,
+    borderRadius: 4,
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 8
+    marginBottom: 6,
+    alignItems: 'center',
   },
   label: {
     fontSize: 10,
-    color: '#374151',
-    width: '30%'
+    fontWeight: 'bold',
+    color: '#475569',
+    width: 120,
   },
   value: {
     fontSize: 10,
-    color: '#111827',
-    width: '70%'
+    color: '#1e293b',
+    flex: 1,
   },
   statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 15
+    marginBottom: 15,
   },
   statBox: {
     backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 8,
     width: '23%',
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0ea5e9',
   },
   statValue: {
-    fontSize: 18,
-    color: '#1e40af',
-    marginBottom: 2
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 8,
     color: '#64748b',
-    textAlign: 'center'
+    textAlign: 'center',
+    lineHeight: 1.2,
   },
   conditionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 10
+    marginBottom: 10,
   },
   conditionBox: {
-    backgroundColor: '#f0f9ff',
-    padding: 8,
-    borderRadius: 4,
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 6,
     width: '48%',
-    marginBottom: 5,
-    marginRight: '2%'
+    marginBottom: 8,
+    marginRight: '2%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 3,
+    borderLeftColor: '#0ea5e9',
   },
   conditionLabel: {
-    fontSize: 8,
-    color: '#0369a1',
-    marginBottom: 2
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#475569',
+    marginBottom: 3,
   },
   conditionValue: {
     fontSize: 10,
-    color: '#1e293b'
+    color: '#1e293b',
   },
   equipmentSection: {
-    backgroundColor: '#fefce8',
+    backgroundColor: '#f8fafc',
     padding: 12,
     borderRadius: 6,
-    marginBottom: 15
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#0ea5e9',
   },
   equipmentTitle: {
     fontSize: 12,
-    color: '#92400e',
-    marginBottom: 8
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 8,
+    backgroundColor: '#f1f5f9',
+    padding: 6,
+    borderRadius: 4,
   },
   equipmentGrid: {
     flexDirection: 'row',
@@ -177,15 +208,23 @@ const styles = StyleSheet.create({
     marginBottom: 5
   },
   skillsSection: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#f8fafc',
     padding: 12,
     borderRadius: 6,
-    marginBottom: 15
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#22c55e',
   },
   skillsTitle: {
     fontSize: 12,
-    color: '#166534',
-    marginBottom: 8
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 8,
+    backgroundColor: '#f1f5f9',
+    padding: 6,
+    borderRadius: 4,
   },
   skillItem: {
     flexDirection: 'row',
@@ -207,54 +246,79 @@ const styles = StyleSheet.create({
     color: '#374151'
   },
   performanceBox: {
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#f8fafc',
     padding: 15,
     borderRadius: 8,
-    borderLeft: '4 solid #22c55e',
-    marginBottom: 15
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#22c55e',
+    marginBottom: 15,
   },
   performanceTitle: {
     fontSize: 12,
-    color: '#166534',
-    marginBottom: 8
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 8,
+    textAlign: 'center',
+    backgroundColor: '#f1f5f9',
+    padding: 6,
+    borderRadius: 4,
   },
   performanceRating: {
     fontSize: 24,
+    fontWeight: 'bold',
     color: '#059669',
     textAlign: 'center',
-    marginBottom: 5
+    marginBottom: 5,
   },
   performanceDesc: {
     fontSize: 10,
-    color: '#374151',
-    textAlign: 'center'
+    color: '#64748b',
+    textAlign: 'center',
   },
   notesSection: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#f8fafc',
     padding: 12,
     borderRadius: 6,
-    marginBottom: 15
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#fbbf24',
   },
   notesTitle: {
     fontSize: 12,
-    color: '#92400e',
-    marginBottom: 8
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 8,
+    backgroundColor: '#f1f5f9',
+    padding: 6,
+    borderRadius: 4,
   },
   notesText: {
     fontSize: 10,
     color: '#374151',
-    lineHeight: 1.4
+    lineHeight: 1.4,
   },
   mediaSection: {
-    backgroundColor: '#f3e8ff',
+    backgroundColor: '#f8fafc',
     padding: 12,
     borderRadius: 6,
-    marginBottom: 15
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#7c3aed',
   },
   mediaTitle: {
     fontSize: 12,
-    color: '#7c3aed',
-    marginBottom: 8
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 8,
+    backgroundColor: '#f1f5f9',
+    padding: 6,
+    borderRadius: 4,
   },
   mediaCount: {
     fontSize: 10,
@@ -274,14 +338,15 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 30,
-    right: 30,
+    bottom: 20,
+    left: 25,
+    right: 25,
     textAlign: 'center',
+    color: '#64748b',
     fontSize: 8,
-    color: '#9ca3af',
-    borderTop: '1 solid #e5e7eb',
-    paddingTop: 10
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 8,
   }
 });
 
@@ -366,7 +431,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
 
         {/* Información del Estudiante */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👤 INFORMACIÓN DEL BUCEADOR</Text>
+          <Text style={styles.sectionTitle}>INFORMACIÓN DEL BUCEADOR</Text>
           <View style={styles.row}>
             <Text style={styles.label}>Nombre:</Text>
             <Text style={styles.value}>{student.first_name} {student.last_name}</Text>
@@ -397,7 +462,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
 
         {/* Detalles de la Inmersión */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🌊 DETALLES DE LA INMERSIÓN</Text>
+          <Text style={styles.sectionTitle}>DETALLES DE LA INMERSIÓN</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{participant.depth_achieved || dive.depth_achieved}m</Text>
@@ -433,7 +498,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
 
         {/* Condiciones del Buceo */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🌡️ CONDICIONES AMBIENTALES</Text>
+          <Text style={styles.sectionTitle}>CONDICIONES AMBIENTALES</Text>
           <View style={styles.conditionsGrid}>
             {participant.water_temperature && (
               <View style={styles.conditionBox}>
@@ -468,7 +533,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
 
         {/* Equipamiento */}
         <View style={styles.equipmentSection}>
-          <Text style={styles.equipmentTitle}>⚙️ EQUIPAMIENTO Y TÉCNICA</Text>
+          <Text style={styles.equipmentTitle}>EQUIPAMIENTO Y TÉCNICA</Text>
           <View style={styles.equipmentGrid}>
             {participant.tank_pressure_start && (
               <View style={styles.equipmentItem}>
@@ -530,7 +595,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         {/* Habilidades Completadas */}
         {participant.skills_completed && Object.keys(participant.skills_completed).length > 0 && (
           <View style={styles.skillsSection}>
-            <Text style={styles.skillsTitle}>✅ HABILIDADES EVALUADAS</Text>
+            <Text style={styles.skillsTitle}>HABILIDADES EVALUADAS</Text>
             {Object.entries(participant.skills_completed).map(([skill, completed], index) => (
               <View key={index} style={styles.skillItem}>
                 <Text style={[styles.skillStatus, { backgroundColor: completed ? '#22c55e' : '#ef4444' }]}>
@@ -545,7 +610,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         {/* Notas del Instructor */}
         {participant.individual_notes && (
           <View style={styles.notesSection}>
-            <Text style={styles.notesTitle}>📝 OBSERVACIONES DEL INSTRUCTOR</Text>
+            <Text style={styles.notesTitle}>OBSERVACIONES DEL INSTRUCTOR</Text>
             <Text style={styles.notesText}>{participant.individual_notes}</Text>
           </View>
         )}
@@ -553,7 +618,7 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         {/* Multimedia */}
         {studentMediaFiles && studentMediaFiles.length > 0 && (
           <View style={styles.mediaSection}>
-            <Text style={styles.mediaTitle}>📁 MULTIMEDIA ADJUNTA</Text>
+            <Text style={styles.mediaTitle}>MULTIMEDIA ADJUNTA</Text>
             <Text style={styles.mediaCount}>
               Archivos Generales: {studentMediaFiles.length} archivo(s) - {studentMediaFiles.filter(f => f.type === 'image').length} imágenes, {studentMediaFiles.filter(f => f.type === 'video').length} videos
             </Text>
