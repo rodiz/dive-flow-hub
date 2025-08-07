@@ -313,6 +313,60 @@ export type Database = {
           },
         ]
       }
+      dive_reports: {
+        Row: {
+          created_at: string
+          dive_ids: string[]
+          file_name: string
+          id: string
+          instructor_id: string | null
+          metadata: Json | null
+          pdf_url: string | null
+          report_type: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dive_ids: string[]
+          file_name: string
+          id?: string
+          instructor_id?: string | null
+          metadata?: Json | null
+          pdf_url?: string | null
+          report_type: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dive_ids?: string[]
+          file_name?: string
+          id?: string
+          instructor_id?: string | null
+          metadata?: Json | null
+          pdf_url?: string | null
+          report_type?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dive_reports_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "dive_reports_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       dive_sites: {
         Row: {
           created_at: string

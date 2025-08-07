@@ -190,7 +190,7 @@ export function ReportPreviewModal({
       };
 
       const { error: dbError } = await supabase
-        .from('course_completion_reports')
+        .from('dive_reports')
         .insert(reportData);
 
       if (dbError) {

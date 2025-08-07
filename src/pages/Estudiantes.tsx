@@ -900,10 +900,6 @@ export default function Estudiantes() {
               {selectedStudentForReports && (
                 <ReportsList 
                   studentId={selectedStudentForReports.id}
-                  onViewReport={(report) => {
-                    // Here you could open a detailed view of the report
-                    console.log('View report:', report);
-                  }}
                 />
               )}
             </div>

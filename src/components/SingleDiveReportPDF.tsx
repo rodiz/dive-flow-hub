@@ -258,7 +258,14 @@ const styles = StyleSheet.create({
   },
   mediaCount: {
     fontSize: 10,
-    color: '#374151'
+    color: '#374151',
+    marginBottom: 3,
+  },
+  mediaInfo: {
+    fontSize: 10,
+    color: '#888888',
+    marginBottom: 2,
+    fontStyle: 'italic',
   },
   footer: {
     position: 'absolute',
@@ -539,9 +546,9 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         )}
 
         {/* Multimedia */}
-        {studentMediaFiles.length > 0 && (
+        {studentMediaFiles && studentMediaFiles.length > 0 && (
           <View style={styles.mediaSection}>
-            <Text style={styles.mediaTitle}>MULTIMEDIA DE LA INMERSIÓN</Text>
+            <Text style={styles.mediaTitle}>🎬 MULTIMEDIA DE LA INMERSIÓN</Text>
             <Text style={styles.mediaCount}>
               Total de archivos: {studentMediaFiles.length}
             </Text>
@@ -551,8 +558,11 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
             <Text style={styles.mediaCount}>
               Videos: {studentMediaFiles.filter(f => f.type === 'video').length}
             </Text>
-            <Text style={styles.mediaCount}>
-              Ver multimedia completa en: https://app.lovable.app/estudiantes
+            <Text style={styles.mediaInfo}>
+              📱 Consulta la multimedia completa en la plataforma digital
+            </Text>
+            <Text style={styles.mediaInfo}>
+              🔗 Enlaces disponibles en el sistema de gestión
             </Text>
           </View>
         )}
