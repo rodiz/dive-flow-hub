@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DiveData {
   id: string;
@@ -84,6 +85,7 @@ export function ReportPreviewModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const isHistoricalReport = reportType === 'historical';
   const isSingleDiveReport = reportType === 'single' && singleDiveId;
@@ -177,6 +179,7 @@ export function ReportPreviewModal({
       // Save report record to database
       const reportData = {
         student_id: student.id,
+        instructor_id: user?.id, // Add current user as instructor
         report_type: isSingleDiveReport ? 'single_dive' : 'historical',
         pdf_url: publicUrl,
         file_name: fileName,
