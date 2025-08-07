@@ -267,6 +267,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     fontStyle: 'italic',
   },
+  mediaFileUrl: {
+    fontSize: 9,
+    color: '#374151',
+    marginBottom: 1,
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -548,22 +553,18 @@ export const SingleDiveReportPDF: React.FC<SingleDiveReportPDFProps> = ({
         {/* Multimedia */}
         {studentMediaFiles && studentMediaFiles.length > 0 && (
           <View style={styles.mediaSection}>
-            <Text style={styles.mediaTitle}>🎬 MULTIMEDIA DE LA INMERSIÓN</Text>
+            <Text style={styles.mediaTitle}>📁 MULTIMEDIA ADJUNTA</Text>
             <Text style={styles.mediaCount}>
-              Total de archivos: {studentMediaFiles.length}
-            </Text>
-            <Text style={styles.mediaCount}>
-              Imágenes: {studentMediaFiles.filter(f => f.type === 'image').length}
-            </Text>
-            <Text style={styles.mediaCount}>
-              Videos: {studentMediaFiles.filter(f => f.type === 'video').length}
+              Archivos Generales: {studentMediaFiles.length} archivo(s) - {studentMediaFiles.filter(f => f.type === 'image').length} imágenes, {studentMediaFiles.filter(f => f.type === 'video').length} videos
             </Text>
             <Text style={styles.mediaInfo}>
-              📱 Consulta la multimedia completa en la plataforma digital
+              Ver multimedia completa en: https://app.lovable.app/estudiantes
             </Text>
-            <Text style={styles.mediaInfo}>
-              🔗 Enlaces disponibles en el sistema de gestión
-            </Text>
+            {studentMediaFiles.map((file, index) => (
+              <Text key={index} style={styles.mediaFileUrl}>
+                • {file.name} - {file.type === 'image' ? 'Imagen' : 'Video'}
+              </Text>
+            ))}
           </View>
         )}
 
